@@ -1,7 +1,28 @@
-import { AiMagicIcon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  AiMagicIcon,
+  CropIcon,
+  FileExportIcon,
+  GeometricShapes02Icon,
+  Image01Icon,
+  TextBoldIcon,
+} from "@hugeicons/core-free-icons";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+import {
+  AnimatePresence,
+  motion,
+  useScroll,
+  useSpring,
+  useTransform,
+  useMotionValueEvent,
+} from "motion/react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { usePostHog } from "posthog-js/react";
 import NewCanvasDialog from "../components/new-canvas-dialog";
 import { idbListDocuments } from "../lib/avnac-editor-idb";
@@ -81,68 +102,65 @@ const initialStickers: Sticker[] = [
   },
 ];
 
-const capabilityCards = [
-  {
-    eyebrow: "Start fast",
-    title: "Open a canvas and begin immediately.",
-    body:
-      "Avnac opens straight into the work. Presets and custom sizes make it easy to set up posters, graphics, and layout studies.",
-  },
-  {
-    eyebrow: "Compose visually",
-    title: "Work with the pieces you actually use.",
-    body:
-      "Text, shapes, images, vector boards, and layer controls are already part of the editor.",
-  },
-  {
-    eyebrow: "Keep going",
-    title: "Stay in the browser and export when ready.",
-    body:
-      "Files autosave in this browser, reopen from the files view, and export to PNG with scale and transparency options.",
-  },
-] as const;
+type EssentialTool = {
+  name: string;
+  note: string;
+  icon: IconSvgElement;
+  accent: string;
+  accentSoft: string;
+  glow: string;
+};
 
-const workflowSteps = [
+const essentialTools: EssentialTool[] = [
   {
-    step: "01",
-    title: "Create the canvas",
-    body:
-      "Pick a preset or set your own dimensions.",
+    name: "Text",
+    note: "Type, hierarchy, and alignment.",
+    icon: TextBoldIcon,
+    accent: "#ef8b74",
+    accentSoft: "rgba(239, 139, 116, 0.22)",
+    glow: "rgba(255, 205, 167, 0.58)",
   },
   {
-    step: "02",
-    title: "Build with the editor tools",
-    body:
-      "Add text, shapes, images, QR codes, and vector boards, then organize with layers and styling controls.",
+    name: "Shapes",
+    note: "Clean primitives for quick composition.",
+    icon: GeometricShapes02Icon,
+    accent: "#f0a74b",
+    accentSoft: "rgba(240, 167, 75, 0.22)",
+    glow: "rgba(255, 223, 153, 0.55)",
   },
   {
-    step: "03",
-    title: "Keep working and export",
-    body:
-      "Your work autosaves in this browser, and you can export a PNG when it is ready to leave the canvas.",
-  },
-] as const;
-
-const aiHighlights = [
-  {
-    eyebrow: "Prompt-based",
-    title: "Describe a layout or a single edit.",
-    body:
-      "Magic can respond to full design prompts or smaller changes inside the current composition.",
+    name: "Images",
+    note: "Drop in assets and build around them.",
+    icon: Image01Icon,
+    accent: "#89a36f",
+    accentSoft: "rgba(137, 163, 111, 0.2)",
+    glow: "rgba(198, 221, 171, 0.5)",
   },
   {
-    eyebrow: "Canvas-aware",
-    title: "It can read the artboard before acting.",
-    body:
-      "The AI tools can inspect canvas size, background, and existing objects before making changes.",
+    name: "Crop",
+    note: "Trim the frame without losing the energy.",
+    icon: CropIcon,
+    accent: "#5d9bc7",
+    accentSoft: "rgba(93, 155, 199, 0.2)",
+    glow: "rgba(162, 210, 238, 0.5)",
   },
   {
-    eyebrow: "Image-aware",
-    title: "It can place images from prompts too.",
-    body:
-      "Magic can search Unsplash, choose a match, and place imagery directly on the artboard.",
+    name: "Magic",
+    note: "Prompt a first pass or a sharper edit.",
+    icon: AiMagicIcon,
+    accent: "#c47fd7",
+    accentSoft: "rgba(196, 127, 215, 0.2)",
+    glow: "rgba(223, 190, 241, 0.52)",
   },
-] as const;
+  {
+    name: "Export",
+    note: "Push the final image out when it lands.",
+    icon: FileExportIcon,
+    accent: "#f17f8f",
+    accentSoft: "rgba(241, 127, 143, 0.18)",
+    glow: "rgba(255, 191, 205, 0.54)",
+  },
+];
 
 type DragState = {
   mode: "drag" | "rotate";
@@ -192,10 +210,36 @@ function Landing() {
   const [savedFileCount, setSavedFileCount] = useState<number | null>(null);
   const [stickers, setStickers] = useState(initialStickers);
   const [activeStickerId, setActiveStickerId] = useState<string | null>(null);
+  const [activeToolIndex, setActiveToolIndex] = useState(0);
+  const [toolDirection, setToolDirection] = useState(1);
   const posthog = usePostHog();
   const stickerLayerRef = useRef<HTMLDivElement | null>(null);
+  const toolsSectionRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef<DragState | null>(null);
+  const activeToolIndexRef = useRef(0);
   const compactHeroStickerLayout = useCompactHeroStickerLayout();
+  const { scrollYProgress } = useScroll({
+    target: toolsSectionRef,
+    offset: ["start start", "end end"],
+  });
+  const smoothToolsProgress = useSpring(scrollYProgress, {
+    stiffness: 210,
+    damping: 32,
+    mass: 0.22,
+  });
+  const toolStops = essentialTools.map((_, index) =>
+    index / Math.max(essentialTools.length - 1, 1),
+  );
+  const stageAccentSoft = useTransform(
+    smoothToolsProgress,
+    toolStops,
+    essentialTools.map((tool) => tool.accentSoft),
+  );
+  const stageGlow = useTransform(
+    smoothToolsProgress,
+    toolStops,
+    essentialTools.map((tool) => tool.glow),
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -210,6 +254,23 @@ function Landing() {
       cancelled = true;
     };
   }, []);
+
+  useMotionValueEvent(smoothToolsProgress, "change", (latest) => {
+    const nextIndex = Math.min(
+      essentialTools.length - 1,
+      Math.max(
+        0,
+        Math.round(latest * Math.max(essentialTools.length - 1, 1)),
+      ),
+    );
+    const previousIndex = activeToolIndexRef.current;
+    if (nextIndex === previousIndex) {
+      return;
+    }
+    activeToolIndexRef.current = nextIndex;
+    setToolDirection(nextIndex > previousIndex ? 1 : -1);
+    setActiveToolIndex(nextIndex);
+  });
 
   const updateStickerPosition = useCallback((
     stickerId: string,
@@ -307,10 +368,17 @@ function Landing() {
   const heroBody = hasSavedFiles
     ? "You already have saved work in this browser. Open your files and keep editing."
     : "Avnac is an open canvas for layouts, posters, and graphics.";
-  const ctaKicker = hasSavedFiles ? "Back to work" : "Ready to make something";
-  const ctaTitle = hasSavedFiles
-    ? "Open your files and keep going."
-    : "Open a canvas and make something.";
+  const activeTool = essentialTools[activeToolIndex];
+  const toolsShellStyle = {
+    "--tool-accent-soft": activeTool.accentSoft,
+    "--tool-glow": activeTool.glow,
+    minHeight: `${essentialTools.length * 68}vh`,
+  } as CSSProperties;
+  const toolsMotionStyle = {
+    ...toolsShellStyle,
+    "--tool-accent-soft": stageAccentSoft,
+    "--tool-glow": stageGlow,
+  } as CSSProperties;
 
   return (
     <main className="landing-page">
@@ -469,168 +537,103 @@ function Landing() {
         </div>
       </section>
 
-      <section className="landing-section landing-section-tight">
-        <div className="landing-container">
-          <div className="landing-section-heading">
-            <div className="landing-kicker">Inside the editor</div>
-            <h2 className="display-title landing-section-title">
-              For posters, layouts, and graphics.
-            </h2>
-            <p className="landing-section-copy">
-              A lightweight canvas for composing visual work in the browser.
-            </p>
-          </div>
-
-          <div className="landing-feature-grid">
-            <article className="landing-feature-spotlight">
-              <div className="landing-feature-window">
-                <div className="landing-feature-toolbar">
-                  <span />
-                  <span />
-                  <span />
-                </div>
-                <div className="landing-feature-canvas">
-                  <div className="landing-feature-card landing-feature-card-a">
-                    <span className="landing-feature-chip">Canvas</span>
-                    <strong>Preset or custom artboards</strong>
-                    <p>Start from common sizes or enter exact dimensions.</p>
-                  </div>
-                  <div className="landing-feature-card landing-feature-card-b">
-                    <span className="landing-feature-chip">Assets</span>
-                    <strong>Your own assets or photos from Unsplash</strong>
-                    <p>Bring imagery onto the artboard without leaving the editor.</p>
-                  </div>
-                  <div className="landing-feature-card landing-feature-card-c">
-                    <span className="landing-feature-chip">Controls</span>
-                    <strong>Layers, blur, crop, vector boards</strong>
-                    <p>Use the browser editor to refine and organize elements.</p>
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <div className="landing-feature-list">
-              {capabilityCards.map((feature) => (
-                <article key={feature.title} className="landing-copy-card">
-                  <div className="landing-kicker">{feature.eyebrow}</div>
-                  <h3>{feature.title}</h3>
-                  <p>{feature.body}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-section">
-        <div className="landing-container">
-          <div className="landing-process-shell">
-            <div className="landing-process-header">
-              <div>
-                <div className="landing-kicker landing-kicker-inverse">
-                  Workflow
-                </div>
-                <h2 className="display-title landing-process-title">
-                  From blank canvas to finished graphic.
-                </h2>
-              </div>
-              <p>
-                The flow is simple: create a file, build the composition, keep
-                iterating in the browser, and export when it is ready.
-              </p>
-            </div>
-
-            <div className="landing-process-grid">
-              {workflowSteps.map((step) => (
-                <article key={step.step} className="landing-process-card">
-                  <span>{step.step}</span>
-                  <h3>{step.title}</h3>
-                  <p>{step.body}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-section">
-        <div className="landing-container">
-          <div className="landing-ai-shell">
-            <div className="landing-ai-header">
-              <div className="landing-kicker landing-ai-kicker">
-                <HugeiconsIcon
-                  icon={AiMagicIcon}
-                  size={14}
-                  strokeWidth={1.9}
-                  className="landing-ai-kicker-icon"
-                />
-                <span>AI</span>
-              </div>
-              <h2 className="display-title landing-section-title">
-                Magic can turn prompts into edits on the canvas.
-              </h2>
-              <p className="landing-section-copy">
-                The editor includes a Magic panel for prompt-based changes. It
-                can work from broad layout instructions or smaller refinement
-                requests inside the current design.
-              </p>
-            </div>
-
-            <div className="landing-ai-grid">
-              <article className="landing-ai-hero-card">
-                <div className="landing-ai-hero-label">Magic beta</div>
-                <p>
-                  Ask for a poster, a headline treatment, a new element, or a
-                  change to what is already on the board.
-                </p>
-                <div className="landing-ai-prompt-list">
-                  <span>“Design a bold typographic poster for a jazz night.”</span>
-                  <span>“Find an Unsplash image and place it behind the title.”</span>
-                  <span>“Tighten the layout and make the headline larger.”</span>
-                </div>
-              </article>
-
-              <div className="landing-ai-card-list">
-                {aiHighlights.map((item) => (
-                  <article key={item.title} className="landing-ai-card">
-                    <div className="landing-kicker">{item.eyebrow}</div>
-                    <h3>{item.title}</h3>
-                    <p>{item.body}</p>
-                  </article>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className="landing-section landing-section-last">
         <div className="landing-container">
-          <div className="landing-cta-band landing-cta-band-only">
-            <div>
-              <div className="landing-kicker">{ctaKicker}</div>
-              <h2 className="display-title landing-cta-title">
-                {ctaTitle}
-              </h2>
+          <motion.div
+            ref={toolsSectionRef}
+            className="landing-tools-shell"
+            style={toolsMotionStyle}
+          >
+            <div className="landing-tools-sticky">
+              <div className="landing-tools-left">
+                <div className="landing-tools-left-header">
+                  <h2 className="display-title landing-tools-left-title">
+                    All the essential tools
+                  </h2>
+                </div>
+                <div className="landing-tools-stage">
+                  <div className="landing-tools-stage-glow" />
+                  <div className="landing-tools-stage-grid" />
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={activeTool.name}
+                      className="landing-tools-single-icon-wrap"
+                      aria-hidden="true"
+                      initial={{
+                        y: toolDirection > 0 ? 70 : -70,
+                        scale: 0.62,
+                        rotate: toolDirection > 0 ? 10 : -10,
+                        opacity: 0.01,
+                      }}
+                      animate={{
+                        y: 0,
+                        scale: 1,
+                        rotate: 0,
+                        opacity: 1,
+                      }}
+                      exit={{
+                        y: toolDirection > 0 ? -50 : 50,
+                        scale: 0.7,
+                        rotate: toolDirection > 0 ? -8 : 8,
+                        opacity: 0.01,
+                      }}
+                      transition={{
+                        y: {
+                          type: "spring",
+                          stiffness: 520,
+                          damping: 30,
+                          mass: 0.62,
+                        },
+                        scale: {
+                          type: "spring",
+                          stiffness: 560,
+                          damping: 24,
+                          mass: 0.52,
+                        },
+                        rotate: {
+                          type: "spring",
+                          stiffness: 540,
+                          damping: 28,
+                          mass: 0.58,
+                        },
+                        opacity: {
+                          duration: 0.08,
+                          ease: "linear",
+                        },
+                      }}
+                    >
+                      <HugeiconsIcon
+                        icon={activeTool.icon}
+                        size={230}
+                        strokeWidth={1.7}
+                        className="landing-tools-single-icon"
+                        style={{ color: activeTool.accent }}
+                      />
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              <div className="landing-tools-copy">
+                <div className="landing-tools-list">
+                  {essentialTools.map((tool, index) => (
+                    <article
+                      key={tool.name}
+                      className={`landing-tools-item ${index === activeToolIndex ? "is-active" : ""}`}
+                    >
+                      <span className="landing-tools-count">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div>
+                        <h3>{tool.name}</h3>
+                        <p>{tool.note}</p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div className="landing-cta-actions">
-              <button
-                type="button"
-                className="bg-black text-white min-h-12 cursor-pointer items-center justify-center rounded-full border-0 px-10 py-3.5 text-base font-medium sm:min-h-14 sm:px-12 sm:py-4 sm:text-[1.0625rem]"
-                onClick={openEditor}
-              >
-                {primaryCtaLabel}
-              </button>
-              <a
-                href="https://github.com/akinloluwami/avnac"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-black/[0.14] bg-white/85 px-8 py-3.5 text-base font-medium text-[var(--text)] no-underline hover:border-black/[0.22] hover:bg-white sm:min-h-14 sm:px-10 sm:py-4 sm:text-[1.0625rem]"
-              >
-                View source
-              </a>
-            </div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
