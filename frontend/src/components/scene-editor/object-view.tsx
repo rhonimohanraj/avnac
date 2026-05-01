@@ -179,6 +179,9 @@ export function SceneObjectView({
   if (obj.type === 'image') {
     const scaleX = obj.width / Math.max(1, obj.crop.width)
     const scaleY = obj.height / Math.max(1, obj.crop.height)
+    const cropRotation = obj.crop.rotation || 0
+    const cropCenterX = obj.crop.x + obj.crop.width / 2
+    const cropCenterY = obj.crop.y + obj.crop.height / 2
     return (
       <div
         style={style}
@@ -197,11 +200,13 @@ export function SceneObjectView({
             draggable={false}
             className="pointer-events-none absolute select-none"
             style={{
-              left: -obj.crop.x * scaleX,
-              top: -obj.crop.y * scaleY,
+              left: obj.width / 2 - cropCenterX * scaleX,
+              top: obj.height / 2 - cropCenterY * scaleY,
               width: obj.naturalWidth * scaleX,
               height: obj.naturalHeight * scaleY,
               maxWidth: 'none',
+              transform: `rotate(${cropRotation}deg)`,
+              transformOrigin: `${cropCenterX * scaleX}px ${cropCenterY * scaleY}px`,
             }}
           />
         </div>
