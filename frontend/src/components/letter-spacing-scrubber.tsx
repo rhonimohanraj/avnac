@@ -92,7 +92,7 @@ export default function LetterSpacingToolbarPopover({
               />
             </div>
 
-            <div className="border-t border-black/[0.06] pt-3">
+            <div className="pt-1">
               <div className="mb-2 flex items-center justify-between gap-3">
                 <span className="text-[13px] font-medium text-neutral-800">Line spacing</span>
                 <span className="text-[13px] tabular-nums text-neutral-600">{lineHeightLabel}</span>
