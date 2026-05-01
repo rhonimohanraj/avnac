@@ -5,13 +5,15 @@ import { useViewportAwarePopoverPlacement } from '../hooks/use-viewport-aware-po
 import EditorRangeSlider from './editor-range-slider'
 import { floatingToolbarIconButton, floatingToolbarPopoverClass } from './floating-toolbar-shell'
 
-const PANEL_ESTIMATE_H = 120
+const PANEL_ESTIMATE_H = 180
 
 type LetterSpacingToolbarPopoverProps = {
   value: number
   min?: number
   max?: number
   onChange: (value: number) => void
+  lineHeight: number
+  onLineHeightChange: (value: number) => void
 }
 
 export default function LetterSpacingToolbarPopover({
@@ -19,6 +21,8 @@ export default function LetterSpacingToolbarPopover({
   min = -40,
   max = 200,
   onChange,
+  lineHeight,
+  onLineHeightChange,
 }: LetterSpacingToolbarPopoverProps) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
@@ -42,13 +46,15 @@ export default function LetterSpacingToolbarPopover({
     return () => document.removeEventListener('mousedown', onDown)
   }, [open])
 
+  const lineHeightLabel = `${Number(lineHeight.toFixed(2))}x`
+
   return (
     <div ref={rootRef} className="relative shrink-0">
       <button
         type="button"
         className={floatingToolbarIconButton(open)}
-        aria-label={`Letter spacing, ${value} pixels`}
-        title="Letter spacing"
+        aria-label={`Text spacing. Letter spacing ${value} pixels, line spacing ${lineHeightLabel}`}
+        title="Text spacing"
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => setOpen(o => !o)}
@@ -67,21 +73,44 @@ export default function LetterSpacingToolbarPopover({
             transform: `translateX(calc(-50% + ${shiftX}px))`,
           }}
         >
-          <div className="mb-2 flex items-center justify-between gap-3">
-            <span className="text-[13px] font-medium text-neutral-800">Letter spacing</span>
-            <span className="text-[13px] tabular-nums text-neutral-600">{value}px</span>
+          <div className="space-y-3">
+            <div>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <span className="text-[13px] font-medium text-neutral-800">Letter spacing</span>
+                <span className="text-[13px] tabular-nums text-neutral-600">{value}px</span>
+              </div>
+              <EditorRangeSlider
+                min={min}
+                max={max}
+                value={value}
+                onChange={onChange}
+                aria-label="Letter spacing"
+                aria-valuemin={min}
+                aria-valuemax={max}
+                aria-valuenow={value}
+                trackClassName="w-full"
+              />
+            </div>
+
+            <div className="border-t border-black/[0.06] pt-3">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <span className="text-[13px] font-medium text-neutral-800">Line spacing</span>
+                <span className="text-[13px] tabular-nums text-neutral-600">{lineHeightLabel}</span>
+              </div>
+              <EditorRangeSlider
+                min={0.6}
+                max={4}
+                step={0.01}
+                value={lineHeight}
+                onChange={onLineHeightChange}
+                aria-label="Line spacing"
+                aria-valuemin={0.6}
+                aria-valuemax={4}
+                aria-valuenow={lineHeight}
+                trackClassName="w-full"
+              />
+            </div>
           </div>
-          <EditorRangeSlider
-            min={min}
-            max={max}
-            value={value}
-            onChange={onChange}
-            aria-label="Letter spacing"
-            aria-valuemin={min}
-            aria-valuemax={max}
-            aria-valuenow={value}
-            trackClassName="w-full"
-          />
         </div>
       ) : null}
     </div>
