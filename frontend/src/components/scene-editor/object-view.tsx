@@ -11,6 +11,7 @@ import {
   blurPxFromPct,
   layoutSceneText,
   renderVectorBoardDocumentToCanvas,
+  sceneTextLetterSpacing,
   sceneTextLineHeight,
 } from '../../lib/avnac-scene-render'
 import type { VectorBoardDocument } from '../../lib/avnac-vector-board-document'
@@ -229,6 +230,7 @@ export function SceneObjectView({
     const layout = layoutSceneText(obj)
     const draftLayout = isEditing ? layoutSceneText({ ...obj, text: textDraft }) : layout
     const lineHeight = sceneTextLineHeight(obj)
+    const letterSpacing = sceneTextLetterSpacing(obj)
     return (
       <div
         style={
@@ -261,6 +263,7 @@ export function SceneObjectView({
               fontStyle: obj.fontStyle,
               fontWeight: String(obj.fontWeight),
               textAlign: obj.textAlign,
+              letterSpacing,
               color: obj.fill.type === 'solid' ? obj.fill.color : '#171717',
               lineHeight: String(lineHeight),
               boxSizing: 'border-box',
@@ -275,6 +278,7 @@ export function SceneObjectView({
               fontStyle: obj.fontStyle,
               fontWeight: String(obj.fontWeight),
               textAlign: obj.textAlign,
+              letterSpacing,
               lineHeight,
               height: Math.max(layout.height, obj.height),
               color: obj.fill.type === 'solid' ? obj.fill.color : 'transparent',
