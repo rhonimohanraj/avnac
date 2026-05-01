@@ -25,6 +25,17 @@ export function sceneTextLetterSpacing(obj: SceneText): number {
   return raw
 }
 
+export function measureSceneTextWidth(
+  obj: SceneText,
+  line: string,
+  ctx?: CanvasRenderingContext2D | null,
+): number {
+  const measure = ctx ?? getMeasureContext()
+  if (!measure) return Math.max(0, Array.from(line).length * (obj.fontSize * 0.6))
+  setTextFont(measure, obj)
+  return measureSceneTextLineWidth(measure, obj, line)
+}
+
 function getMeasureContext(): CanvasRenderingContext2D | null {
   if (typeof document === 'undefined') return null
   if (!measureCanvas) measureCanvas = document.createElement('canvas')
@@ -289,6 +300,16 @@ function cssLineBoxBaselineOffset(
       : metrics.actualBoundingBoxDescent || obj.fontSize * 0.2
   const fontBox = Math.max(1, ascent + descent)
   return (lineHeight - fontBox) / 2 + ascent
+}
+
+export function sceneTextBaselineOffset(
+  obj: SceneText,
+  ctx?: CanvasRenderingContext2D | null,
+): number {
+  const measure = ctx ?? getMeasureContext()
+  if (!measure) return obj.fontSize * 0.8
+  setTextFont(measure, obj)
+  return cssLineBoxBaselineOffset(measure, obj, obj.fontSize * sceneTextLineHeight(obj))
 }
 
 export function layoutSceneText(
