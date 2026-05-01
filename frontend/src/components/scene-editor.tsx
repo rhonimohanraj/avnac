@@ -260,6 +260,7 @@ function clampImageCropToFitNaturalSize(
     y: Math.max(0, Math.min(image.crop.y || 0, naturalHeight - height)),
     width,
     height,
+    rotation: image.crop.rotation || 0,
   }
 }
 
@@ -495,7 +496,9 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
     y: 0,
     w: 0,
     h: 0,
+    rotation: 0,
   })
+  const [imageCropFrame, setImageCropFrame] = useState({ width: 0, height: 0 })
   const imageCropTargetIdRef = useRef<string | null>(null)
   const [exportError, setExportError] = useState<string | null>(null)
   const [contextMenu, setContextMenu] = useState<EditorContextMenuState | null>(null)
@@ -1061,6 +1064,7 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
           y: 0,
           width: meta.naturalWidth,
           height: meta.naturalHeight,
+          rotation: 0,
         },
         cornerRadius: 0,
       }
@@ -1468,7 +1472,9 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
       y: selectedSingle.crop.y,
       w: selectedSingle.crop.width,
       h: selectedSingle.crop.height,
+      rotation: selectedSingle.crop.rotation || 0,
     })
+    setImageCropFrame({ width: selectedSingle.width, height: selectedSingle.height })
     setImageCropOpen(true)
   }, [selectedSingle])
 
@@ -1536,19 +1542,46 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
     if (!targetId) return
     setDoc(prev => ({
       ...prev,
-      objects: prev.objects.map(obj =>
-        obj.id === targetId && obj.type === 'image'
-          ? {
-              ...obj,
-              crop: {
-                x: rect.cropX,
-                y: rect.cropY,
-                width: rect.width,
-                height: rect.height,
-              },
-            }
-          : obj,
-      ),
+      objects: prev.objects.map(obj => {
+        if (obj.id !== targetId || obj.type !== 'image') return obj
+
+        const cropAspect = rect.width / Math.max(1, rect.height)
+        const frameAspect = obj.width / Math.max(1, obj.height)
+        let nextWidth = obj.width
+        let nextHeight = obj.height
+
+        if (
+          Number.isFinite(cropAspect) &&
+          cropAspect > 0 &&
+          Math.abs(cropAspect - frameAspect) > 0.001
+        ) {
+          if (cropAspect >= frameAspect) {
+            nextWidth = obj.width
+            nextHeight = Math.max(1, obj.width / cropAspect)
+          } else {
+            nextHeight = obj.height
+            nextWidth = Math.max(1, obj.height * cropAspect)
+          }
+        }
+
+        const centerX = obj.x + obj.width / 2
+        const centerY = obj.y + obj.height / 2
+
+        return {
+          ...obj,
+          x: centerX - nextWidth / 2,
+          y: centerY - nextHeight / 2,
+          width: nextWidth,
+          height: nextHeight,
+          crop: {
+            x: rect.cropX,
+            y: rect.cropY,
+            width: rect.width,
+            height: rect.height,
+            rotation: rect.cropRotation,
+          },
+        }
+      }),
     }))
     setImageCropOpen(false)
   }, [])
@@ -2752,6 +2785,7 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
             open={imageCropOpen}
             imageSrc={imageCropSrc}
             initialCrop={imageCropInitial}
+            initialFrame={imageCropFrame}
             onCancel={cancelImageCrop}
             onApply={applyImageCropFromModal}
           />
