@@ -38,6 +38,26 @@ type TextFormatToolbarProps = {
 }
 
 const LIST_LIMIT = 80
+const TEXT_ALIGN_ORDER = ['left', 'center', 'right', 'justify'] as const
+const TEXT_ALIGN_LABELS: Record<TextFormatToolbarValues['textAlign'], string> = {
+  left: 'Align left',
+  center: 'Align center',
+  right: 'Align right',
+  justify: 'Justify',
+}
+const TEXT_ALIGN_ICONS = {
+  left: TextAlignLeftIcon,
+  center: TextAlignCenterIcon,
+  right: TextAlignRightIcon,
+  justify: TextAlignJustifyCenterIcon,
+} satisfies Record<TextFormatToolbarValues['textAlign'], typeof TextAlignLeftIcon>
+
+function getNextTextAlign(
+  value: TextFormatToolbarValues['textAlign'],
+): TextFormatToolbarValues['textAlign'] {
+  const currentIndex = TEXT_ALIGN_ORDER.indexOf(value)
+  return TEXT_ALIGN_ORDER[(currentIndex + 1) % TEXT_ALIGN_ORDER.length]
+}
 
 /** Fallback when menu node is not measured yet. */
 const FONT_MENU_ESTIMATE_PX = 288
@@ -124,6 +144,11 @@ export default function TextFormatToolbar({
       window.removeEventListener('scroll', syncPlacement, true)
     }
   }, [fontOpen, fontQuery, filteredFonts.length])
+
+  const nextTextAlign = getNextTextAlign(values.textAlign)
+  const currentTextAlignLabel = TEXT_ALIGN_LABELS[values.textAlign]
+  const nextTextAlignLabel = TEXT_ALIGN_LABELS[nextTextAlign]
+  const currentTextAlignIcon = TEXT_ALIGN_ICONS[values.textAlign]
 
   return (
     <FloatingToolbarShell ref={rootRef} role="toolbar" aria-label="Text formatting">
@@ -217,39 +242,12 @@ export default function TextFormatToolbar({
         <div className="flex min-h-8 min-w-0 flex-1 flex-nowrap items-center gap-1 overflow-x-auto [scrollbar-width:thin]">
           <button
             type="button"
-            className={floatingToolbarIconButton(values.textAlign === 'left')}
-            title="Align left"
-            aria-label="Align left"
-            onClick={() => onChange({ textAlign: 'left' })}
+            className={floatingToolbarIconButton(false)}
+            title={`${currentTextAlignLabel}. Click to switch to ${nextTextAlignLabel.toLowerCase()}.`}
+            aria-label={`${currentTextAlignLabel}. Click to switch to ${nextTextAlignLabel.toLowerCase()}.`}
+            onClick={() => onChange({ textAlign: nextTextAlign })}
           >
-            <HugeiconsIcon icon={TextAlignLeftIcon} size={18} strokeWidth={1.75} />
-          </button>
-          <button
-            type="button"
-            className={floatingToolbarIconButton(values.textAlign === 'center')}
-            title="Align center"
-            aria-label="Align center"
-            onClick={() => onChange({ textAlign: 'center' })}
-          >
-            <HugeiconsIcon icon={TextAlignCenterIcon} size={18} strokeWidth={1.75} />
-          </button>
-          <button
-            type="button"
-            className={floatingToolbarIconButton(values.textAlign === 'right')}
-            title="Align right"
-            aria-label="Align right"
-            onClick={() => onChange({ textAlign: 'right' })}
-          >
-            <HugeiconsIcon icon={TextAlignRightIcon} size={18} strokeWidth={1.75} />
-          </button>
-          <button
-            type="button"
-            className={floatingToolbarIconButton(values.textAlign === 'justify')}
-            title="Justify"
-            aria-label="Justify"
-            onClick={() => onChange({ textAlign: 'justify' })}
-          >
-            <HugeiconsIcon icon={TextAlignJustifyCenterIcon} size={18} strokeWidth={1.75} />
+            <HugeiconsIcon icon={currentTextAlignIcon} size={18} strokeWidth={1.75} />
           </button>
 
           <div className="mx-0.5 h-5 w-px shrink-0 bg-black/10" aria-hidden />
