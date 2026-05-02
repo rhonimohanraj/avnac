@@ -1,17 +1,121 @@
 import {
   AppleIcon,
   CommandLineIcon,
-  ComputerIcon,
-  Download01Icon,
   GithubIcon,
   WindowsNewIcon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { createFileRoute } from '@tanstack/react-router'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 export const Route = createFileRoute('/studio')({
   component: StudioPage,
 })
+
+type Sticker = {
+  id: string
+  src: string
+  label: string
+  rotation: number
+  size: string
+  desktop: { x: number; y: number }
+  mobile: { x: number; y: number }
+}
+
+const initialStickers: Sticker[] = [
+  {
+    id: 'sunflower',
+    src: '/stickers/sunflower-badge.webp',
+    label: 'Sunflower sticker',
+    rotation: 6,
+    size: 'clamp(5.6rem, 10.8vw, 8.8rem)',
+    desktop: { x: 74, y: 12 },
+    mobile: { x: 37, y: 15 },
+  },
+  {
+    id: 'star',
+    src: '/stickers/shooting-star-badge.webp',
+    label: 'Shooting star sticker',
+    rotation: -7,
+    size: 'clamp(4.4rem, 8.8vw, 7.4rem)',
+    desktop: { x: 9, y: 12 },
+    mobile: { x: 7, y: 16 },
+  },
+  {
+    id: 'pineapple',
+    src: '/stickers/pineapple.webp',
+    label: 'Pineapple sticker',
+    rotation: 7,
+    size: 'clamp(5.4rem, 11.2vw, 9.1rem)',
+    desktop: { x: 77, y: 70 },
+    mobile: { x: 68, y: 74 },
+  },
+  {
+    id: 'donut',
+    src: '/stickers/donut.webp',
+    label: 'Donut sticker',
+    rotation: -8,
+    size: 'clamp(4.9rem, 9.6vw, 8rem)',
+    desktop: { x: 16, y: 73 },
+    mobile: { x: 8, y: 76 },
+  },
+  {
+    id: 'lollipop',
+    src: '/stickers/lollipop.webp',
+    label: 'Lollipop sticker',
+    rotation: 12,
+    size: 'clamp(4.1rem, 8vw, 6.5rem)',
+    desktop: { x: 80, y: 45 },
+    mobile: { x: 72, y: 15 },
+  },
+  {
+    id: 'leaf',
+    src: '/stickers/leaf.webp',
+    label: 'Leaf sticker',
+    rotation: -11,
+    size: 'clamp(4rem, 7.8vw, 6.2rem)',
+    desktop: { x: 11, y: 47 },
+    mobile: { x: 40, y: 77 },
+  },
+]
+
+type DragState = {
+  mode: 'drag' | 'rotate'
+  id: string
+  pointerId: number
+  startClientX: number
+  startClientY: number
+  startLeft: number
+  startTop: number
+  startRotation: number
+  centerX: number
+  centerY: number
+  startPointerAngle: number
+  width: number
+  height: number
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max)
+}
+
+function radiansToDegrees(value: number) {
+  return (value * 180) / Math.PI
+}
+
+function useCompactLayout() {
+  const [compact, setCompact] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 640px)').matches : false,
+  )
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 640px)')
+    const update = () => setCompact(media.matches)
+    update()
+    media.addEventListener?.('change', update)
+    return () => media.removeEventListener?.('change', update)
+  }, [])
+  return compact
+}
 
 const primaryButtonClass =
   'landing-primary-button inline-flex min-h-12 items-center justify-center rounded-full px-8 py-3.5 text-base font-medium no-underline sm:min-h-14 sm:px-10 sm:py-4 sm:text-[1.0625rem]'
@@ -70,26 +174,6 @@ const downloadLinks = [
   },
 ] as const
 
-const heroHighlights = [
-  {
-    eyebrow: 'Latest builds',
-    title: 'Windows, macOS, and Linux',
-    body: 'This page points to the newest published Studio release.',
-    icon: Download01Icon,
-  },
-  {
-    eyebrow: 'Local workflow',
-    title: 'Native open, save, and export',
-    body: 'Keep projects on your machine instead of relying on browser-only storage.',
-    icon: ComputerIcon,
-  },
-  {
-    eyebrow: 'Independent',
-    title: 'Shipped from its own GitHub repo',
-    body: 'Desktop work is maintained separately from upstream Avnac.',
-    icon: GithubIcon,
-  },
-] as const
 
 const comparisonRows = [
   {
@@ -162,20 +246,178 @@ const commandCards = [
 ] as const
 
 function StudioPage() {
+  const [stickers, setStickers] = useState(initialStickers)
+  const [activeStickerId, setActiveStickerId] = useState<string | null>(null)
+  const stickerLayerRef = useRef<HTMLDivElement | null>(null)
+  const dragStateRef = useRef<DragState | null>(null)
+  const compact = useCompactLayout()
+
+  const updateStickerPosition = useCallback(
+    (stickerId: string, clientX: number, clientY: number) => {
+      const layer = stickerLayerRef.current
+      const dragState = dragStateRef.current
+      if (!layer || !dragState || dragState.id !== stickerId) return
+
+      if (dragState.mode === 'rotate') {
+        const pointerAngle = Math.atan2(clientY - dragState.centerY, clientX - dragState.centerX)
+        const rotation =
+          dragState.startRotation + radiansToDegrees(pointerAngle - dragState.startPointerAngle)
+        setStickers(current =>
+          current.map(s => (s.id === stickerId ? { ...s, rotation } : s)),
+        )
+        return
+      }
+
+      const layerRect = layer.getBoundingClientRect()
+      const positionKey = compact ? 'mobile' : 'desktop'
+      const nextLeft = clamp(
+        dragState.startLeft + (clientX - dragState.startClientX),
+        0,
+        Math.max(layerRect.width - dragState.width, 0),
+      )
+      const nextTop = clamp(
+        dragState.startTop + (clientY - dragState.startClientY),
+        0,
+        Math.max(layerRect.height - dragState.height, 0),
+      )
+      setStickers(current =>
+        current.map(s =>
+          s.id === stickerId
+            ? {
+              ...s,
+              [positionKey]: {
+                x: (nextLeft / Math.max(layerRect.width, 1)) * 100,
+                y: (nextTop / Math.max(layerRect.height, 1)) * 100,
+              },
+            }
+            : s,
+        ),
+      )
+    },
+    [compact],
+  )
+
+  const endDrag = (pointerId: number, target: EventTarget | null) => {
+    if (dragStateRef.current?.pointerId !== pointerId) return
+    if (target instanceof HTMLElement && target.hasPointerCapture(pointerId)) {
+      target.releasePointerCapture(pointerId)
+    }
+    dragStateRef.current = null
+    setActiveStickerId(null)
+  }
+
   return (
     <main className="landing-page">
-      <section className="hero-page relative flex min-h-[84dvh] flex-col overflow-hidden px-5 py-14 sm:px-10 sm:py-16 lg:min-h-[76dvh] lg:px-16 lg:py-14">
+      <section className="hero-page relative flex min-h-dvh flex-col justify-center overflow-hidden px-5 py-16 sm:px-10 sm:py-20 lg:px-16 lg:py-24">
         <div className="hero-bg-orb hero-bg-orb-a" aria-hidden="true" />
         <div className="hero-bg-orb hero-bg-orb-b" aria-hidden="true" />
         <div className="hero-grid" aria-hidden="true" />
+        <div ref={stickerLayerRef} className="hero-sticker-layer" aria-hidden="true">
+          {stickers.map(sticker =>
+            (() => {
+              const pos = compact ? sticker.mobile : sticker.desktop
+              return (
+                <div
+                  key={sticker.id}
+                  className={`hero-sticker-frame ${activeStickerId === sticker.id ? 'is-active' : ''}`}
+                  style={{
+                    left: `${pos.x}%`,
+                    top: `${pos.y}%`,
+                    width: sticker.size,
+                    transform: `rotate(${sticker.rotation}deg)`,
+                    zIndex: activeStickerId === sticker.id ? 3 : 1,
+                  }}
+                  onPointerDown={e => {
+                    const layer = stickerLayerRef.current
+                    if (!layer) return
+                    const layerRect = layer.getBoundingClientRect()
+                    const stickerLeft = (pos.x / 100) * Math.max(layerRect.width, 1)
+                    const stickerTop = (pos.y / 100) * Math.max(layerRect.height, 1)
+                    dragStateRef.current = {
+                      mode: 'drag',
+                      id: sticker.id,
+                      pointerId: e.pointerId,
+                      startClientX: e.clientX,
+                      startClientY: e.clientY,
+                      startLeft: stickerLeft,
+                      startTop: stickerTop,
+                      startRotation: sticker.rotation,
+                      centerX:
+                        e.currentTarget.getBoundingClientRect().left +
+                        e.currentTarget.offsetWidth / 2,
+                      centerY:
+                        e.currentTarget.getBoundingClientRect().top +
+                        e.currentTarget.offsetHeight / 2,
+                      startPointerAngle: 0,
+                      width: e.currentTarget.offsetWidth,
+                      height: e.currentTarget.offsetHeight,
+                    }
+                    setActiveStickerId(sticker.id)
+                    e.currentTarget.setPointerCapture(e.pointerId)
+                  }}
+                  onPointerMove={e => updateStickerPosition(sticker.id, e.clientX, e.clientY)}
+                  onPointerUp={e => endDrag(e.pointerId, e.target)}
+                  onPointerCancel={e => endDrag(e.pointerId, e.target)}
+                >
+                  <span className="hero-sticker-selection" />
+                  <span className="hero-sticker-handle hero-sticker-handle-nw" />
+                  <span
+                    className="hero-sticker-rotation-arm"
+                    onPointerDown={e => {
+                      e.stopPropagation()
+                      const frame = e.currentTarget.parentElement
+                      if (!frame) return
+                      const frameRect = frame.getBoundingClientRect()
+                      const centerX = frameRect.left + frameRect.width / 2
+                      const centerY = frameRect.top + frameRect.height / 2
+                      dragStateRef.current = {
+                        mode: 'rotate',
+                        id: sticker.id,
+                        pointerId: e.pointerId,
+                        startClientX: e.clientX,
+                        startClientY: e.clientY,
+                        startLeft: 0,
+                        startTop: 0,
+                        startRotation: sticker.rotation,
+                        centerX,
+                        centerY,
+                        startPointerAngle: Math.atan2(e.clientY - centerY, e.clientX - centerX),
+                        width: frameRect.width,
+                        height: frameRect.height,
+                      }
+                      setActiveStickerId(sticker.id)
+                      frame.setPointerCapture(e.pointerId)
+                    }}
+                  >
+                    <span className="hero-sticker-rotation-handle" />
+                  </span>
+                  <span className="hero-sticker-handle hero-sticker-handle-ne" />
+                  <span className="hero-sticker-handle hero-sticker-handle-e" />
+                  <span className="hero-sticker-handle hero-sticker-handle-se" />
+                  <span className="hero-sticker-handle hero-sticker-handle-s" />
+                  <span className="hero-sticker-handle hero-sticker-handle-sw" />
+                  <span className="hero-sticker-handle hero-sticker-handle-w" />
+                  <img
+                    src={sticker.src}
+                    alt={sticker.label}
+                    className="hero-sticker-image"
+                    loading="lazy"
+                    decoding="async"
+                    draggable={false}
+                  />
+                </div>
+              )
+            })(),
+          )}
+        </div>
 
-        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-12 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl rise-in text-left">
+        <div className="relative z-1 mx-auto w-full max-w-3xl">
+          <div className="rise-in text-left">
             <div className={sectionLabelClass}>Desktop release</div>
             <h1 className="display-title hero-headline mb-8 font-medium text-balance text-(--text) sm:mb-10 lg:mb-12">
               Download Avnac Studio.
             </h1>
-            <p className="mb-10 max-w-2xl text-lg leading-[1.6] text-(--text-muted) sm:mb-12 sm:text-xl sm:leading-[1.55] lg:text-[1.375rem] lg:leading-normal">
+            <p className="mb-10 max-w-xl text-lg leading-[1.6] text-(--text-muted) sm:mb-12 sm:text-xl sm:leading-[1.55] lg:text-[1.375rem] lg:leading-normal">
               Avnac Studio is the desktop fork of Avnac. It packages the editor as a native app for
               Windows, macOS, and Linux, with local files and native save dialogs.
             </p>
@@ -186,7 +428,7 @@ function StudioPage() {
               </a>
             </div>
 
-            <div className="mt-10 max-w-2xl rounded-[1.6rem] border border-black/8 bg-white/72 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.05)] backdrop-blur-md">
+            <div className="mt-10 rounded-[1.6rem] border border-black/8 bg-white/72 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.05)] backdrop-blur-md">
               <div className="flex items-center gap-3">
                 <span className="inline-flex size-10 items-center justify-center rounded-2xl bg-black/5 text-(--text)">
                   <HugeiconsIcon icon={GithubIcon} size={18} strokeWidth={1.75} />
@@ -256,48 +498,6 @@ function StudioPage() {
               </div>
             </div>
           </div>
-
-          <article className="landing-feature-spotlight relative z-20 w-full max-w-xl">
-            <div className="landing-feature-window">
-              <div className="landing-feature-toolbar">
-                <span />
-                <span />
-                <span />
-              </div>
-              <div className="landing-feature-canvas flex flex-col gap-4">
-                <div className="rounded-3xl border border-black/8 bg-white/84 p-5 shadow-[0_14px_36px_rgba(15,23,42,0.05)]">
-                  <div className={sectionLabelClass}>Ready to share</div>
-                  <h2 className="mt-3 text-[1.65rem] font-semibold leading-tight tracking-[-0.03em] text-(--text)">
-                    One place for downloads, repo links, and desktop context.
-                  </h2>
-                  <p className="mt-3 text-sm leading-7 text-(--text-muted)">
-                    The links on this page use GitHub&apos;s latest-release download pattern, so
-                    they automatically stay current when a new Studio build ships.
-                  </p>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {heroHighlights.map(item => (
-                    <div
-                      key={item.title}
-                      className="rounded-[1.3rem] border border-black/8 bg-white/86 p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="inline-flex size-10 items-center justify-center rounded-2xl bg-black/5 text-(--text)">
-                          <HugeiconsIcon icon={item.icon} size={18} strokeWidth={1.75} />
-                        </span>
-                        <span className="landing-feature-chip">{item.eyebrow}</span>
-                      </div>
-                      <strong className="mt-4 block text-base font-semibold text-(--text)">
-                        {item.title}
-                      </strong>
-                      <p className="mt-2 text-sm leading-6 text-(--text-muted)">{item.body}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </article>
         </div>
       </section>
 
@@ -340,6 +540,59 @@ function StudioPage() {
               </a>
             ))}
           </div>
+
+          <div className="mt-6 rounded-[1.4rem] border border-black/10 bg-white/70 px-5 py-5 shadow-[0_12px_30px_rgba(15,23,42,0.04)] backdrop-blur-md">
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-start justify-between gap-4">
+                <div>
+                  <div className={sectionLabelClass}>Windows note</div>
+                  <h3 className="mt-2 text-base font-semibold text-(--text)">
+                    Windows SmartScreen Warning
+                  </h3>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-(--text-muted)">
+                    Windows may block the installer with a SmartScreen prompt. 
+                  </p>
+                </div>
+                <span className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-(--text-subtle) transition-opacity group-open:opacity-0">
+                  Expand
+                </span>
+              </summary>
+
+              <div className="mt-5 space-y-5 border-t border-black/8 pt-5">
+                <div>
+                  <h4 className="text-sm font-semibold text-(--text)">Get past SmartScreen in two clicks</h4>
+                  <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm leading-6 text-(--text-muted)">
+                    <li>When the SmartScreen dialog appears, click <strong>More info</strong></li>
+                    <li>Click <strong>Run anyway</strong></li>
+                  </ol>
+                  <p className="mt-3 text-sm leading-6 text-(--text-muted)">
+                    Full walkthrough with screenshots:{' '}
+                    <a
+                      href="https://www.screensaversplanet.com/help/guides/windows/how-to-bypass-windows-smartscreen-49"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={textLinkClass}
+                    >
+                      How to bypass Windows SmartScreen
+                    </a>
+                    .
+                  </p>
+                </div>
+
+                <p className="text-sm leading-6 text-(--text-muted)">
+                  It&apos;s safe — just unsigned. The full source is{' '}
+                  <a href={studioRepoHref} target="_blank" rel="noopener noreferrer" className={textLinkClass}>
+                    open on GitHub
+                  </a>
+                  . Prefer to compile it yourself?{' '}
+                  <a href="#developer-setup" className={textLinkClass}>
+                    Build steps are below.
+                  </a>
+                </p>
+              </div>
+            </details>
+          </div>
+
 
           <div className="mt-6 rounded-[1.4rem] border border-black/10 bg-white/70 px-5 py-5 shadow-[0_12px_30px_rgba(15,23,42,0.04)] backdrop-blur-md">
             <details className="group">
@@ -516,7 +769,7 @@ function StudioPage() {
         </div>
       </section>
 
-      <section className="landing-section">
+      <section id="developer-setup" className="landing-section">
         <div className="landing-container">
           <div className="landing-ai-shell">
             <div className="landing-ai-header">
@@ -529,7 +782,7 @@ function StudioPage() {
 
             <div className="grid gap-4 lg:grid-cols-2">
               {commandCards.map(card => (
-                <article key={card.eyebrow} className="landing-ai-card flex h-full flex-col">
+                <article key={card.eyebrow} className="landing-ai-card min-w-0! flex h-full flex-col">
                   <div className="flex items-center gap-3">
                     <span className="inline-flex size-10 items-center justify-center rounded-2xl bg-black/5 text-(--text)">
                       <HugeiconsIcon icon={CommandLineIcon} size={18} strokeWidth={1.75} />
@@ -537,7 +790,7 @@ function StudioPage() {
                     <div className="landing-kicker">{card.eyebrow}</div>
                   </div>
                   <p className="mt-4">{card.body}</p>
-                  <pre className="mt-6 h-43 overflow-x-auto rounded-[1.2rem] bg-[#111111] px-4 py-4 text-sm leading-7 text-white">
+                  <pre className="mt-6 h-43 min-w-0! overflow-x-auto rounded-[1.2rem] bg-[#111111] px-4 py-4 text-sm leading-7 text-white">
                     <code className="block whitespace-pre-wrap">{card.command}</code>
                   </pre>
                 </article>
