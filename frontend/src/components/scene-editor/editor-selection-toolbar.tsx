@@ -4,22 +4,11 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import ArtboardResizeToolbarControl from '../artboard-resize-toolbar-control'
 import BackgroundPopover, { bgValueToSwatch } from '../background-popover'
 import CornerRadiusToolbarControl from '../corner-radius-toolbar-control'
-import {
-  FloatingToolbarDivider,
-  FloatingToolbarShell,
-  floatingToolbarIconButton,
-} from '../floating-toolbar-shell'
 import ShapeOptionsToolbar from '../shape-options-toolbar'
 import TextFormatToolbar from '../text-format-toolbar'
+import { Button, Divider, IconButton, Toolbar } from '../ui'
 import { useEditorSelectionToolbar } from './editor-selection-toolbar-context'
 import { useEditorStore } from './editor-store'
-
-function backgroundTopBtn(disabled?: boolean) {
-  const base =
-    'flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-neutral-700 outline-none transition-colors hover:bg-black/[0.06]'
-  if (disabled) return `${base} pointer-events-none cursor-not-allowed opacity-35`
-  return base
-}
 
 export function EditorSelectionToolbar() {
   const { actions, refs, state } = useEditorSelectionToolbar()
@@ -106,83 +95,77 @@ export function EditorSelectionToolbar() {
       ) : null}
       {showEffectsToolbar ? (
         <div className="pointer-events-auto">
-          <FloatingToolbarShell role="toolbar" aria-label="Selection">
-            <div className="flex items-center py-1 pl-2 pr-2">
-              {imageCornerToolbar ? (
-                <>
-                  <button
-                    type="button"
-                    disabled={elementToolbarLockedDisplay}
-                    className={[
-                      floatingToolbarIconButton(false),
-                      elementToolbarLockedDisplay ? 'pointer-events-none opacity-40' : '',
-                    ].join(' ')}
-                    onClick={openImageCropModal}
-                    aria-label="Crop image"
-                    title="Crop image"
-                  >
-                    <HugeiconsIcon icon={CropIcon} size={20} strokeWidth={1.75} />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={elementToolbarLockedDisplay || imageRemovalState === 'running'}
-                    className={[
-                      floatingToolbarIconButton(imageRemovalState !== 'idle', { wide: true }),
-                      'gap-1.5 px-2.5 text-[13px] font-medium',
-                      elementToolbarLockedDisplay ? 'pointer-events-none opacity-40' : '',
-                    ].join(' ')}
-                    onClick={removeImageBackground}
-                    aria-label="Remove background"
-                    title="Remove background"
-                  >
-                    <HugeiconsIcon icon={AiMagicIcon} size={18} strokeWidth={1.75} />
-                    <span>
-                      {imageRemovalState === 'running'
-                        ? 'Removing…'
-                        : imageRemovalState === 'success'
-                          ? 'Removed'
-                          : 'Remove bg'}
-                    </span>
-                  </button>
-                  <FloatingToolbarDivider />
-                  <CornerRadiusToolbarControl
-                    value={imageCornerToolbar.radius}
-                    max={imageCornerToolbar.max}
-                    onChange={applyImageCornerRadius}
-                    disabled={elementToolbarLockedDisplay}
-                  />
-                  <FloatingToolbarDivider />
-                </>
-              ) : null}
-              {selectionEffectsFooterSlot}
-            </div>
-          </FloatingToolbarShell>
+          <Toolbar compact className="pl-2 pr-2" aria-label="Selection">
+            {imageCornerToolbar ? (
+              <>
+                <IconButton
+                  icon={CropIcon}
+                  label="Crop image"
+                  disabled={elementToolbarLockedDisplay}
+                  className={elementToolbarLockedDisplay ? 'pointer-events-none opacity-40' : ''}
+                  onClick={openImageCropModal}
+                />
+                <Button
+                  disabled={elementToolbarLockedDisplay || imageRemovalState === 'running'}
+                  variant="ghost"
+                  size="xs"
+                  className={[
+                    'h-8 gap-1.5 rounded-lg px-2.5 text-[13px] font-medium',
+                    elementToolbarLockedDisplay ? 'pointer-events-none opacity-40' : '',
+                    imageRemovalState !== 'idle' ? 'bg-black/[0.08] text-neutral-900' : '',
+                  ].join(' ')}
+                  onClick={removeImageBackground}
+                  aria-label="Remove background"
+                  title="Remove background"
+                  iconBefore={<HugeiconsIcon icon={AiMagicIcon} size={18} strokeWidth={1.75} />}
+                >
+                  {imageRemovalState === 'running'
+                    ? 'Removing…'
+                    : imageRemovalState === 'success'
+                      ? 'Removed'
+                      : 'Remove bg'}
+                </Button>
+                <Divider orientation="vertical" />
+                <CornerRadiusToolbarControl
+                  value={imageCornerToolbar.radius}
+                  max={imageCornerToolbar.max}
+                  onChange={applyImageCornerRadius}
+                  disabled={elementToolbarLockedDisplay}
+                />
+                <Divider orientation="vertical" />
+              </>
+            ) : null}
+            {selectionEffectsFooterSlot}
+          </Toolbar>
         </div>
       ) : null}
       {showBackgroundToolbar ? (
         <div ref={backgroundPopoverAnchorRef} className="pointer-events-auto relative">
-          <div className="flex items-center rounded-full border border-black/[0.08] bg-white/90 px-2 py-1 shadow-[0_4px_20px_rgba(0,0,0,0.08)] backdrop-blur-md">
+          <Toolbar compact className="px-2 py-1">
             <ArtboardResizeToolbarControl
               width={artboard.width}
               height={artboard.height}
               onResize={onArtboardResize}
               viewportRef={viewportRef}
             />
-            <FloatingToolbarDivider />
-            <button
-              type="button"
-              className={backgroundTopBtn(false)}
+            <Divider orientation="vertical" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 gap-2 rounded-lg px-3 text-sm"
               onClick={toggleBackgroundPopover}
               aria-label="Page background"
               aria-expanded={bgPopoverOpen}
+              iconBefore={
+                <span
+                  className="size-4 rounded-full border border-black/10"
+                  style={bgValueToSwatch(bg)}
+                />
+              }
             >
-              <span
-                className="size-4 rounded-full border border-black/10"
-                style={bgValueToSwatch(bg)}
-              />
               Background
-            </button>
-          </div>
+            </Button>
+          </Toolbar>
           {bgPopoverOpen ? (
             <div
               ref={backgroundPopoverPanelRef}
