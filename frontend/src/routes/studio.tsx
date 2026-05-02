@@ -284,12 +284,12 @@ function StudioPage() {
         current.map(s =>
           s.id === stickerId
             ? {
-                ...s,
-                [positionKey]: {
-                  x: (nextLeft / Math.max(layerRect.width, 1)) * 100,
-                  y: (nextTop / Math.max(layerRect.height, 1)) * 100,
-                },
-              }
+              ...s,
+              [positionKey]: {
+                x: (nextLeft / Math.max(layerRect.width, 1)) * 100,
+                y: (nextTop / Math.max(layerRect.height, 1)) * 100,
+              },
+            }
             : s,
         ),
       )
@@ -545,6 +545,67 @@ function StudioPage() {
             <details className="group">
               <summary className="flex cursor-pointer list-none items-start justify-between gap-4">
                 <div>
+                  <div className={sectionLabelClass}>Windows note</div>
+                  <h3 className="mt-2 text-base font-semibold text-(--text)">
+                    Windows SmartScreen Warning
+                  </h3>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-(--text-muted)">
+                    Windows may block the installer with a SmartScreen prompt. The binary is
+                    completely safe — it&apos;s just unsigned. Code signing costs money; once the
+                    project grows enough to justify it, it&apos;s getting done. In the meantime,
+                    the entire source is{' '}
+                    <a
+                      href={studioRepoHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={textLinkClass}
+                    >
+                      open on GitHub
+                    </a>{' '}
+                  </p>
+                </div>
+                <span className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-(--text-subtle) transition-opacity group-open:opacity-0">
+                  Expand
+                </span>
+              </summary>
+
+              <div className="mt-5 space-y-5 border-t border-black/8 pt-5">
+                <div>
+                  <h4 className="text-sm font-semibold text-(--text)">Get past SmartScreen in two clicks</h4>
+                  <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm leading-6 text-(--text-muted)">
+                    <li>When the SmartScreen dialog appears, click <strong>More info</strong></li>
+                    <li>Click <strong>Run anyway</strong></li>
+                  </ol>
+                  <p className="mt-3 text-sm leading-6 text-(--text-muted)">
+                    Full walkthrough with screenshots:{' '}
+                    <a
+                      href="https://www.screensaversplanet.com/help/guides/windows/how-to-bypass-windows-smartscreen-49"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={textLinkClass}
+                    >
+                      How to bypass Windows SmartScreen
+                    </a>
+                    .
+                  </p>
+                </div>
+
+                <p className="text-sm leading-6 text-(--text-muted)">
+                  Prefer not to trust a pre-built binary? Fair enough — you can{' '}
+                  <a href="#developer-setup" className={textLinkClass}>
+                    build it yourself
+                  </a>{' '}
+                  from source in a few commands.
+                </p>
+              </div>
+            </details>
+          </div>
+
+
+          <div className="mt-6 rounded-[1.4rem] border border-black/10 bg-white/70 px-5 py-5 shadow-[0_12px_30px_rgba(15,23,42,0.04)] backdrop-blur-md">
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-start justify-between gap-4">
+                <div>
                   <div className={sectionLabelClass}>macOS note</div>
                   <h3 className="mt-2 text-base font-semibold text-(--text)">
                     macOS Security Notice (First Launch)
@@ -716,7 +777,7 @@ function StudioPage() {
         </div>
       </section>
 
-      <section className="landing-section">
+      <section id="developer-setup" className="landing-section">
         <div className="landing-container">
           <div className="landing-ai-shell">
             <div className="landing-ai-header">
