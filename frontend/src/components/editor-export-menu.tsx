@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useViewportAwarePopoverPlacement } from '../hooks/use-viewport-aware-popover'
 import EditorRangeSlider from './editor-range-slider'
 import { floatingToolbarPopoverMenuClass } from './floating-toolbar-shell'
+import { Button } from './ui'
 
 export type PngExportCrop = 'none' | 'selection' | 'content'
 
@@ -460,13 +461,15 @@ export default function EditorExportMenu({ disabled, getPages, onExport }: Props
                       </div>
 
                       <div className="mt-1.5 border-t border-black/[0.06] pt-1.5">
-                        <button
-                          type="button"
-                          className="inline-flex h-9 w-full items-center justify-center rounded-xl bg-neutral-900 px-4 text-[12.5px] font-semibold text-white transition-colors hover:bg-neutral-800"
+                        <Button
+                          variant="primary"
+                          size="md"
+                          fullWidth
+                          className="h-11 !rounded-full px-5 text-[13px]"
                           onClick={() => setPagesOpen(false)}
                         >
                           Done
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ) : null}
@@ -617,9 +620,10 @@ export default function EditorExportMenu({ disabled, getPages, onExport }: Props
                   {opts.format === 'pdf' && opts.flattenPdf ? ' • Flattened' : ''}
                 </div>
               </div>
-              <button
-                type="button"
-                className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-neutral-900 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-neutral-800"
+              <Button
+                variant="primary"
+                size="md"
+                className="h-11 !rounded-full px-5 text-[13px]"
                 onClick={() => {
                   const finalOpts = {
                     ...opts,
@@ -639,7 +643,7 @@ export default function EditorExportMenu({ disabled, getPages, onExport }: Props
                 }}
               >
                 Download
-              </button>
+              </Button>
             </div>
           </div>
         </div>
