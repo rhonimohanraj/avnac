@@ -1,9 +1,9 @@
 import { Copy01Icon, Delete02Icon, LayerAddIcon } from '@hugeicons/core-free-icons'
-import { HugeiconsIcon } from '@hugeicons/react'
 import { useMemo } from 'react'
 
 import { getObjectRotatedBounds } from '../../lib/avnac-scene'
 import CanvasElementToolbar, { type CanvasAlignKind } from '../canvas-element-toolbar'
+import { IconButton } from '../ui'
 import { useCanvasStageContext } from './canvas-stage-context'
 import { useEditorStore } from './editor-store'
 import { SceneObjectView } from './object-view'
@@ -42,43 +42,37 @@ function CanvasPageControls({
   onDeletePage: (pageId?: string) => void
   onDuplicatePage: (sourcePageId?: string) => void
 }) {
-  const buttonClass =
-    'flex h-9 w-9 items-center justify-center rounded-lg bg-transparent text-neutral-700 transition-colors hover:bg-black/[0.05] hover:text-neutral-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900'
-
   return (
     <div
       data-avnac-chrome
       className="pointer-events-auto mb-1 flex h-9 items-center justify-end gap-1.5"
       style={{ width: artboardWidth }}
     >
-      <button
-        type="button"
-        className={buttonClass}
+      <IconButton
+        icon={Copy01Icon}
+        label="Duplicate page"
+        size="md"
+        variant="ghost"
+        className="rounded-lg text-neutral-700 hover:bg-black/[0.05] hover:text-neutral-900"
         onClick={() => onDuplicatePage(pageId)}
-        aria-label="Duplicate page"
-        title="Duplicate page"
-      >
-        <HugeiconsIcon icon={Copy01Icon} size={18} strokeWidth={1.75} />
-      </button>
-      <button
-        type="button"
-        className={buttonClass}
+      />
+      <IconButton
+        icon={LayerAddIcon}
+        label="Add new page"
+        size="md"
+        variant="ghost"
+        className="rounded-lg text-neutral-700 hover:bg-black/[0.05] hover:text-neutral-900"
         onClick={() => onAddPage(pageId)}
-        aria-label="Add new page"
-        title="Add new page"
-      >
-        <HugeiconsIcon icon={LayerAddIcon} size={18} strokeWidth={1.75} />
-      </button>
+      />
       {canDeletePage ? (
-        <button
-          type="button"
-          className={buttonClass}
+        <IconButton
+          icon={Delete02Icon}
+          label="Delete page"
+          size="md"
+          variant="ghost"
+          className="rounded-lg text-neutral-700 hover:bg-black/[0.05] hover:text-neutral-900"
           onClick={() => onDeletePage(pageId)}
-          aria-label="Delete page"
-          title="Delete page"
-        >
-          <HugeiconsIcon icon={Delete02Icon} size={18} strokeWidth={1.75} />
-        </button>
+        />
       ) : null}
     </div>
   )
