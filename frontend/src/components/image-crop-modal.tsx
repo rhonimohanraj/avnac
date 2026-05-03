@@ -4,6 +4,7 @@ import type { CSSProperties } from 'react'
 import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import EditorRangeSlider from './editor-range-slider'
+import { Button } from './ui'
 
 const MIN_SIDE = 12
 const HANDLE_PX = 10
@@ -677,23 +678,25 @@ export default function ImageCropModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-black/10 px-4 py-3">
-          <button
-            type="button"
-            className="rounded-lg border border-black/10 bg-[var(--surface)] px-4 py-2 text-sm font-medium text-[var(--text)] hover:bg-black/[0.04]"
+        <div className="flex justify-end gap-2.5 border-t border-black/10 px-4 py-3">
+          <Button
+            variant="secondary"
+            size="md"
+            className="h-11 !rounded-full px-5"
             onClick={onCancel}
           >
             Cancel
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
             disabled={!imgReady}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-transparent bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 disabled:pointer-events-none disabled:opacity-40"
+            variant="primary"
+            size="md"
+            className="h-11 !rounded-full px-5"
             onClick={applyCrop}
+            iconBefore={<HugeiconsIcon icon={Tick02Icon} size={18} strokeWidth={1.75} />}
           >
-            <HugeiconsIcon icon={Tick02Icon} size={18} strokeWidth={1.75} />
             Apply crop
-          </button>
+          </Button>
         </div>
       </div>
     </div>,
