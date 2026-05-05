@@ -14,6 +14,7 @@ export {
   parseAvnacDocument,
   type SceneArrow,
   type SceneGroup,
+  type SceneIcon,
   type SceneImage,
   type SceneLine,
   type SceneObject,
