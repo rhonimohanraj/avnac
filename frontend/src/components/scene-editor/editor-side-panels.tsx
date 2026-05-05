@@ -1,4 +1,10 @@
+import { lazy, Suspense } from 'react'
+
 import { emptyVectorBoardDocument } from '../../lib/avnac-vector-board-document'
+import {
+  editorSidebarPanelLeftClass,
+  editorSidebarPanelTopClass,
+} from '../../lib/editor-sidebar-panel-layout'
 import EditorAiPanel from '../editor-ai-panel'
 import EditorAppsPanel from '../editor-apps-panel'
 import EditorFloatingSidebar, { type EditorSidebarPanelId } from '../editor-floating-sidebar'
@@ -9,6 +15,27 @@ import EditorVectorBoardPanel from '../editor-vector-board-panel'
 import VectorBoardWorkspace from '../vector-board-workspace'
 import { useEditorLayerControls } from './use-editor-layer-controls'
 import { useVectorBoardControlsContext } from './use-vector-board-controls'
+
+const EditorIconsPanel = lazy(() => import('../editor-icons-panel'))
+
+function EditorIconsPanelLoading() {
+  return (
+    <div
+      data-avnac-chrome
+      className={[
+        'pointer-events-auto fixed z-40 flex w-[min(100vw-1.5rem,360px)] max-h-[min(92dvh,720px)] flex-col overflow-hidden rounded-3xl border border-black/[0.08] bg-white/95 backdrop-blur-md',
+        editorSidebarPanelLeftClass,
+        editorSidebarPanelTopClass,
+      ].join(' ')}
+      role="status"
+    >
+      <div className="border-b border-black/[0.06] px-3 py-2 text-sm font-semibold text-neutral-800">
+        Icons
+      </div>
+      <div className="px-3 py-8 text-center text-sm text-neutral-500">Loading...</div>
+    </div>
+  )
+}
 
 export function EditorSidePanels({
   activePanel,
@@ -62,6 +89,11 @@ export function EditorSidePanels({
       />
       <EditorUploadsPanel open={ready && activePanel === 'uploads'} onClose={onClosePanel} />
       <EditorImagesPanel open={ready && activePanel === 'images'} onClose={onClosePanel} />
+      {ready && activePanel === 'icons' ? (
+        <Suspense fallback={<EditorIconsPanelLoading />}>
+          <EditorIconsPanel open onClose={onClosePanel} />
+        </Suspense>
+      ) : null}
       <EditorVectorBoardPanel
         open={ready && activePanel === 'vector-board'}
         onClose={onClosePanel}
