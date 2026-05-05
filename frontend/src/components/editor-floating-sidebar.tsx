@@ -33,6 +33,12 @@ const ITEMS: Item[] = [
     activeIcon: editorSidebarIcons.images.activeIcon,
   },
   {
+    id: 'icons',
+    label: 'Icons',
+    icon: editorSidebarIcons.icons.icon,
+    activeIcon: editorSidebarIcons.icons.activeIcon,
+  },
+  {
     id: 'vector-board',
     label: 'Vectors',
     icon: editorSidebarIcons['vector-board'].icon,
