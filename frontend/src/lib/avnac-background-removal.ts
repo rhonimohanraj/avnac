@@ -2,7 +2,7 @@ import { loadImageMetadata } from './avnac-image-proxy'
 import type { SceneImage } from './avnac-scene'
 import { getPublicApiBase } from './public-api-base'
 
-type RemoveBackgroundOptions = {
+export type RemoveBackgroundOptions = {
   a?: boolean
   ab?: number
   ae?: number
@@ -80,6 +80,35 @@ async function blobToDataUrl(blob: Blob): Promise<string> {
   })
 }
 
+function filenameFromContentDisposition(value: string | null): string | null {
+  if (!value) return null
+
+  const filenameStar = value.match(/filename\*=UTF-8''([^;]+)/i)?.[1]
+  if (filenameStar) {
+    try {
+      return decodeURIComponent(filenameStar.trim())
+    } catch {
+      return filenameStar.trim()
+    }
+  }
+
+  const filename = value.match(/filename="([^"]+)"/i)?.[1] ?? value.match(/filename=([^;]+)/i)?.[1]
+  return filename?.trim() || null
+}
+
+async function throwRemoveBackgroundError(response: Response): Promise<never> {
+  let message = 'Background removal failed.'
+  try {
+    const body = (await response.json()) as { error?: unknown }
+    if (typeof body.error === 'string' && body.error.trim()) {
+      message = body.error
+    }
+  } catch {
+    // Ignore JSON parse errors and fall back to the default message.
+  }
+  throw new Error(message)
+}
+
 function fileNameForImage(image: SceneImage, blob: Blob): string {
   const parsed = parseImageUrl(image.src)
   const fromPath = parsed?.pathname.split('/').filter(Boolean).at(-1)?.trim()
@@ -93,6 +122,20 @@ function fileNameForImage(image: SceneImage, blob: Blob): string {
           ? 'jpg'
           : 'png'
   return `image.${ext}`
+}
+
+async function requestRemoveBackgroundFromFile(
+  file: File,
+  options: RemoveBackgroundOptions,
+): Promise<Response> {
+  const endpoint = `${getPublicApiBase()}/media/remove-background`
+  const form = new FormData()
+  form.set('file', file)
+  appendOptionsToFormData(form, options)
+  return fetch(endpoint, {
+    method: 'POST',
+    body: form,
+  })
 }
 
 async function requestRemoveBackground(
@@ -125,13 +168,27 @@ async function requestRemoveBackground(
   const file = new File([sourceBlob], fileNameForImage(image, sourceBlob), {
     type: sourceBlob.type || 'image/png',
   })
-  const form = new FormData()
-  form.set('file', file)
-  appendOptionsToFormData(form, options)
-  return fetch(endpoint, {
-    method: 'POST',
-    body: form,
-  })
+  return requestRemoveBackgroundFromFile(file, options)
+}
+
+export async function removeBackgroundFromFile(
+  file: File,
+  options: RemoveBackgroundOptions = {},
+): Promise<{
+  blob: Blob
+  filename: string
+}> {
+  const response = await requestRemoveBackgroundFromFile(file, options)
+
+  if (!response.ok) {
+    await throwRemoveBackgroundError(response)
+  }
+
+  const blob = await response.blob()
+  return {
+    blob,
+    filename: filenameFromContentDisposition(response.headers.get('content-disposition')) ?? '',
+  }
 }
 
 export async function removeBackgroundFromSceneImage(
@@ -145,16 +202,7 @@ export async function removeBackgroundFromSceneImage(
   const response = await requestRemoveBackground(image, options)
 
   if (!response.ok) {
-    let message = 'Background removal failed.'
-    try {
-      const body = (await response.json()) as { error?: unknown }
-      if (typeof body.error === 'string' && body.error.trim()) {
-        message = body.error
-      }
-    } catch {
-      // Ignore JSON parse errors and fall back to the default message.
-    }
-    throw new Error(message)
+    await throwRemoveBackgroundError(response)
   }
 
   const blob = await response.blob()
