@@ -1,11 +1,11 @@
 import { isIP } from 'node:net'
 import { Elysia, t } from 'elysia'
 import { env } from '../config/env'
-import { HttpError } from '../lib/http'
 import {
-  isSupportedBackgroundRemovalProvider,
   type BackgroundRemovalProvider,
+  isSupportedBackgroundRemovalProvider,
 } from '../lib/background-removal'
+import { HttpError } from '../lib/http'
 import { isSupportedRembgModel, type RembgModel } from '../lib/rembg'
 
 const IMAGE_ACCEPT_HEADER = 'image/*,*/*;q=0.8'
@@ -121,9 +121,21 @@ function assertImageResponseContentType(contentType: string): void {
   }
 }
 
+function formatUploadLimit(sizeInBytes: number): string {
+  const megabytes = sizeInBytes / (1024 * 1024)
+  if (megabytes >= 1) {
+    return `${Number(megabytes.toFixed(1))} MB`
+  }
+  const kilobytes = sizeInBytes / 1024
+  return `${Math.round(kilobytes)} KB`
+}
+
 function assertWithinUploadLimit(sizeInBytes: number): void {
   if (sizeInBytes > env.REMBG_MAX_UPLOAD_BYTES) {
-    throw new HttpError(413, `Image exceeds the ${env.REMBG_MAX_UPLOAD_BYTES} byte upload limit.`)
+    throw new HttpError(
+      413,
+      `Image exceeds the ${formatUploadLimit(env.REMBG_MAX_UPLOAD_BYTES)} upload limit.`,
+    )
   }
 }
 
@@ -143,10 +155,7 @@ function backgroundRemovalBaseUrl(provider: BackgroundRemovalProvider): string {
   }
 
   if (!env.REMBG_URL) {
-    throw new HttpError(
-      503,
-      'Background removal is not configured (set REMBG_URL on the server).',
-    )
+    throw new HttpError(503, 'Background removal is not configured (set REMBG_URL on the server).')
   }
   return env.REMBG_URL
 }
@@ -344,9 +353,7 @@ function parseModelOption(value: unknown): RembgModel | undefined {
   return model
 }
 
-function parseProviderOption(
-  value: unknown,
-): BackgroundRemovalProvider | undefined {
+function parseProviderOption(value: unknown): BackgroundRemovalProvider | undefined {
   const provider = readTrimmedString(value)
   if (!provider) {
     return undefined
@@ -543,7 +550,7 @@ async function removeBackground(input: RemoveBackgroundInput): Promise<Response>
       throw new HttpError(502, `Background removal failed (${upstream.status}).`)
     }
 
-    if (!upstream || !upstream.ok) {
+    if (!upstream?.ok) {
       throw new HttpError(502, 'Could not reach the background removal service.')
     }
 
