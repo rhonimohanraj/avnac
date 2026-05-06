@@ -7,6 +7,8 @@ import {
 import { DEFAULT_REMBG_MODEL, REMBG_MODELS } from '../lib/rembg'
 import { getRuntimeEnv } from './runtime-env'
 
+const DEFAULT_REMBG_MAX_UPLOAD_BYTES = 1_572_864
+
 const optionalNonEmptyString = z.preprocess(
   value => (typeof value === 'string' && !value.trim() ? undefined : value),
   z.string().min(1).optional(),
@@ -39,7 +41,11 @@ const envSchema = z.object({
   REMBG_URL: optionalUrl,
   REMBG_DEFAULT_MODEL: z.enum(REMBG_MODELS).default(DEFAULT_REMBG_MODEL),
   REMBG_TIMEOUT_MS: z.coerce.number().int().positive().default(120_000),
-  REMBG_MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(20_000_000),
+  REMBG_MAX_UPLOAD_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(DEFAULT_REMBG_MAX_UPLOAD_BYTES),
 })
 
 export const env = envSchema.parse(getRuntimeEnv())
