@@ -34,7 +34,7 @@
     --default-object-fill: #262626;
 
     /* Single knob for canvas/editor accent (selection chrome, guides, focus rings, etc.) */
-    --accent: #ffb88e;
+    --accent: #ff0e70;
   }
 
   *,
@@ -912,6 +912,15 @@
     animation: avnac-remove-bg-success-fade 700ms ease-out both;
   }
 
+  .avnac-remove-bg-original-layer {
+    clip-path: inset(0 0 0 100%);
+    transition: clip-path 760ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .avnac-remove-bg-original-layer.is-visible {
+    clip-path: inset(0 0 0 0);
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .rise-in {
       animation: none;
@@ -925,6 +934,10 @@
     .avnac-remove-bg-overlay__wash,
     .avnac-remove-bg-overlay__beam {
       animation: none;
+    }
+
+    .avnac-remove-bg-original-layer {
+      transition: none;
     }
 
     button,
