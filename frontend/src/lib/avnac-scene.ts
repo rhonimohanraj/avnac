@@ -148,6 +148,8 @@ export type SceneObject =
   | SceneVectorBoard
   | SceneGroup
 
+export type SceneGroupSpacingAxis = 'horizontal' | 'vertical'
+
 export type AvnacDocument = {
   v: typeof AVNAC_DOC_VERSION
   artboard: { width: number; height: number }
@@ -1152,6 +1154,95 @@ export function normalizeGroup(group: SceneGroup): SceneGroup {
     height: Math.max(1, maxY - minY),
     children,
   }
+}
+
+function getSpacingStart(obj: SceneObject, axis: SceneGroupSpacingAxis): number {
+  return axis === 'horizontal' ? obj.x : obj.y
+}
+
+function getSpacingSize(obj: SceneObject, axis: SceneGroupSpacingAxis): number {
+  return axis === 'horizontal' ? obj.width : obj.height
+}
+
+function orderGroupChildrenForSpacing(
+  children: SceneObject[],
+  axis: SceneGroupSpacingAxis,
+): SceneObject[] {
+  const crossAxis: SceneGroupSpacingAxis = axis === 'horizontal' ? 'vertical' : 'horizontal'
+  return [...children].sort((a, b) => {
+    const primary = getSpacingStart(a, axis) - getSpacingStart(b, axis)
+    if (Math.abs(primary) > 0.001) return primary
+    const secondary = getSpacingStart(a, crossAxis) - getSpacingStart(b, crossAxis)
+    if (Math.abs(secondary) > 0.001) return secondary
+    return a.id.localeCompare(b.id)
+  })
+}
+
+function layoutGroupChildrenWithSpacing(
+  group: SceneGroup,
+  axis: SceneGroupSpacingAxis,
+  gap: number,
+): SceneGroup {
+  if (group.children.length < 2) return group
+  const ordered = orderGroupChildrenForSpacing(group.children, axis)
+  const positions = new Map<string, number>()
+  let cursor = getSpacingStart(ordered[0], axis)
+  for (const child of ordered) {
+    positions.set(child.id, cursor)
+    cursor += getSpacingSize(child, axis) + gap
+  }
+  const children = group.children.map(child => {
+    const nextStart = positions.get(child.id)
+    if (nextStart === undefined) return cloneSceneObject(child)
+    const next = cloneSceneObject(child)
+    if (axis === 'horizontal') next.x = nextStart
+    else next.y = nextStart
+    return next
+  })
+  return normalizeGroup({
+    ...group,
+    children,
+  })
+}
+
+export function getGroupChildSpacing(
+  group: SceneGroup,
+  axis: SceneGroupSpacingAxis,
+): number | null {
+  if (group.children.length < 2) return null
+  const ordered = orderGroupChildrenForSpacing(group.children, axis)
+  const gaps = ordered.slice(1).map((child, index) => {
+    const prev = ordered[index]
+    return getSpacingStart(child, axis) - (getSpacingStart(prev, axis) + getSpacingSize(prev, axis))
+  })
+  if (gaps.length === 0) return null
+  const first = gaps[0]
+  return gaps.every(gap => Math.abs(gap - first) < 0.5) ? first : null
+}
+
+export function distributeGroupChildrenEvenly(
+  group: SceneGroup,
+  axis: SceneGroupSpacingAxis,
+): SceneGroup {
+  if (group.children.length < 3) return group
+  const ordered = orderGroupChildrenForSpacing(group.children, axis)
+  const first = ordered[0]
+  const last = ordered[ordered.length - 1]
+  const start = getSpacingStart(first, axis)
+  const end = getSpacingStart(last, axis) + getSpacingSize(last, axis)
+  const totalSize = ordered.reduce((sum, child) => sum + getSpacingSize(child, axis), 0)
+  const gap = (end - start - totalSize) / (ordered.length - 1)
+  return layoutGroupChildrenWithSpacing(group, axis, gap)
+}
+
+export function setGroupChildSpacing(
+  group: SceneGroup,
+  axis: SceneGroupSpacingAxis,
+  gap: number,
+): SceneGroup {
+  if (group.children.length < 2) return group
+  const safeGap = Number.isFinite(gap) ? Math.max(0, Math.round(gap)) : 0
+  return layoutGroupChildrenWithSpacing(group, axis, safeGap)
 }
 
 export function rotatePoint(
