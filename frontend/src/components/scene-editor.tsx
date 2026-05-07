@@ -133,7 +133,10 @@ import {
   EditorStoreProvider,
 } from './scene-editor/editor-store'
 import { useAiDesignController } from './scene-editor/use-ai-design-controller'
-import { useEditorKeyboardShortcuts } from './scene-editor/use-editor-keyboard-shortcuts'
+import {
+  isEditableShortcutTarget,
+  useEditorKeyboardShortcuts,
+} from './scene-editor/use-editor-keyboard-shortcuts'
 import { useSceneDocumentLifecycle } from './scene-editor/use-scene-document-lifecycle'
 import {
   useVectorBoardControls,
@@ -2585,12 +2588,16 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
     reorderSelectionLayers,
     setDoc,
     setShortcutsOpen,
+    shortcutScopeRef: viewportRef,
     ungroupSelection,
   })
 
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
       if (textEditingId) return
+      if (isEditableShortcutTarget(e.target)) return
+      const viewport = viewportRef.current
+      if (!viewport || !(e.target instanceof Node) || !viewport.contains(e.target)) return
       const files = imageFilesFromTransfer(e.clipboardData)
       if (files.length > 0) {
         e.preventDefault()
