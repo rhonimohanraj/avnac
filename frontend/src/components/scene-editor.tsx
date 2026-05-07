@@ -34,6 +34,8 @@ import {
   createEmptyAvnacDocument,
   createEmptyAvnacPage,
   createGroupFromSelection,
+  distributeGroupChildrenEvenly,
+  getGroupChildSpacing,
   getObjectCenter,
   getObjectFill,
   getObjectRotatedBounds,
@@ -52,6 +54,7 @@ import {
   type SceneObject,
   type SceneText,
   sceneObjectToShapeMeta,
+  setGroupChildSpacing,
   setObjectCornerRadius,
   setObjectFill,
   setObjectStroke,
@@ -104,7 +107,7 @@ import {
 } from '../scene-engine/primitives'
 import type { BgValue } from './background-popover'
 import BlurToolbarControl from './blur-toolbar-control'
-import type { CanvasAlignKind } from './canvas-element-toolbar'
+import type { CanvasAlignKind, CanvasSpacingAxis } from './canvas-element-toolbar'
 import type { ExportImageOptions, ExportPageOption } from './editor-export-menu'
 import type { EditorSidebarPanelId } from './editor-floating-sidebar'
 import EditorShortcutsModal from './editor-shortcuts-modal'
@@ -762,6 +765,21 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
   const elementToolbarCanGroup = selectedObjects.length >= 2
   const elementToolbarCanAlignElements = selectedObjects.length >= 2
   const elementToolbarCanUngroup = selectedSingle?.type === 'group' && !selectedSingle.locked
+  const elementToolbarCanSpaceGroup =
+    selectedSingle?.type === 'group' &&
+    !selectedSingle.locked &&
+    selectedSingle.children.length >= 2
+  const elementToolbarCanDistributeGroupSpacing =
+    selectedSingle?.type === 'group' &&
+    !selectedSingle.locked &&
+    selectedSingle.children.length >= 3
+  const elementToolbarGroupSpacingValues = useMemo(() => {
+    if (!elementToolbarCanSpaceGroup || selectedSingle?.type !== 'group') return null
+    return {
+      horizontal: getGroupChildSpacing(selectedSingle, 'horizontal'),
+      vertical: getGroupChildSpacing(selectedSingle, 'vertical'),
+    }
+  }, [elementToolbarCanSpaceGroup, selectedSingle])
   const imageRemovalState: 'idle' | 'running' | 'success' =
     selectedSingle?.type === 'image' && imageRemovalFx?.targetId === selectedSingle.id
       ? imageRemovalFx.phase
@@ -1506,6 +1524,24 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
       })
     },
     [selectedObjects, updateSelectedObjects],
+  )
+
+  const distributeGroupSpacing = useCallback(
+    (axis: CanvasSpacingAxis) => {
+      updateSelectedObjects(obj =>
+        obj.type === 'group' && !obj.locked ? distributeGroupChildrenEvenly(obj, axis) : obj,
+      )
+    },
+    [updateSelectedObjects],
+  )
+
+  const setGroupSpacing = useCallback(
+    (axis: CanvasSpacingAxis, gap: number) => {
+      updateSelectedObjects(obj =>
+        obj.type === 'group' && !obj.locked ? setGroupChildSpacing(obj, axis, gap) : obj,
+      )
+    },
+    [updateSelectedObjects],
   )
 
   const onArtboardResize = useCallback(
@@ -2700,6 +2736,7 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
       deletePage,
       duplicatePage,
       duplicateElement: () => void duplicateElement(),
+      distributeGroupSpacing,
       groupSelection,
       onArtboardPointerEnter,
       onArtboardPointerLeave,
@@ -2722,6 +2759,7 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
       onTextDraftChange: setTextDraft,
       onViewportPointerDown,
       pasteFromClipboard: () => void pasteFromClipboard(),
+      setGroupSpacing,
       toggleElementLock,
       ungroupSelection,
     },
@@ -2738,8 +2776,11 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
       editingSelectedText,
       elementToolbarAlignAlready,
       elementToolbarCanAlignElements,
+      elementToolbarCanDistributeGroupSpacing,
       elementToolbarCanGroup,
+      elementToolbarCanSpaceGroup,
       elementToolbarCanUngroup: !!elementToolbarCanUngroup,
+      elementToolbarGroupSpacingValues,
       elementToolbarLayout,
       elementToolbarLockedDisplay,
       hasObjectSelected,
