@@ -1,3 +1,5 @@
+import { Coffee02Icon, FavouriteIcon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { zipSync } from 'fflate'
 import {
   forwardRef,
@@ -14,7 +16,6 @@ import {
 import { createPortal } from 'react-dom'
 import { useStore } from 'zustand'
 import { useViewportAwarePopoverPlacement } from '../hooks/use-viewport-aware-popover'
-import { removeBackgroundFromSceneImage } from '../lib/avnac-background-removal'
 import { cloneIconSvg } from '../lib/avnac-icon'
 import {
   AVNAC_ICON_DRAG_MIME,
@@ -73,6 +74,7 @@ import {
   type VectorBoardDocument,
 } from '../lib/avnac-vector-board-document'
 import { extractImageUrlFromDataTransfer } from '../lib/extract-image-url-from-data-transfer'
+import { REMOVE_BG_UNAVAILABLE_MESSAGE } from '../lib/feature-flags'
 import { loadGoogleFontFamily } from '../lib/load-google-font'
 import {
   angleFromPoints,
@@ -258,22 +260,6 @@ async function renderExportPagePreviewDataUrl(
   } catch (error) {
     console.error('[avnac] export page preview failed', error)
     return null
-  }
-}
-
-function clampImageCropToFitNaturalSize(
-  image: SceneImage,
-  naturalWidth: number,
-  naturalHeight: number,
-): SceneImage['crop'] {
-  const width = Math.max(1, Math.min(image.crop.width || naturalWidth, naturalWidth))
-  const height = Math.max(1, Math.min(image.crop.height || naturalHeight, naturalHeight))
-  return {
-    x: Math.max(0, Math.min(image.crop.x || 0, naturalWidth - width)),
-    y: Math.max(0, Math.min(image.crop.y || 0, naturalHeight - height)),
-    width,
-    height,
-    rotation: image.crop.rotation || 0,
   }
 }
 
@@ -473,7 +459,6 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
   const dragStateRef = useRef<DragState | null>(null)
   const autosaveTimerRef = useRef<number | null>(null)
   const historyTimerRef = useRef<number | null>(null)
-  const imageRemovalSuccessTimerRef = useRef<number | null>(null)
   const snapGuideXRef = useRef<number | null>(null)
   const snapGuideYRef = useRef<number | null>(null)
   const editorStoreRef = useRef<EditorStoreApi | null>(null)
@@ -513,16 +498,17 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
   })
   const [imageCropFrame, setImageCropFrame] = useState({ width: 0, height: 0 })
   const imageCropTargetIdRef = useRef<string | null>(null)
+  const [imageRemovalUnavailableOpen, setImageRemovalUnavailableOpen] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
   const [contextMenu, setContextMenu] = useState<EditorContextMenuState | null>(null)
   const [textEditingId, setTextEditingId] = useState<string | null>(null)
   const [textDraft, setTextDraft] = useState('')
   const [backgroundActive, setBackgroundActive] = useState(false)
   const [backgroundHovered, setBackgroundHovered] = useState(false)
-  const [imageRemovalFx, setImageRemovalFx] = useState<{
+  const imageRemovalFx: {
     phase: 'running' | 'success'
     targetId: string
-  } | null>(null)
+  } | null = null
   const [marqueeRect, setMarqueeRect] = useState<MarqueeRect | null>(null)
   const [snapGuides, setSnapGuides] = useState<SceneSnapGuide[]>([])
   const [, setSelectionRev] = useState(0)
@@ -642,9 +628,6 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
         window.clearTimeout(timer)
       })
       deletePageTimersRef.current.clear()
-      if (imageRemovalSuccessTimerRef.current !== null) {
-        window.clearTimeout(imageRemovalSuccessTimerRef.current)
-      }
     }
   }, [])
 
@@ -1575,62 +1558,8 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
 
   const removeImageBackground = useCallback(() => {
     if (!selectedSingle || selectedSingle.type !== 'image' || selectedSingle.locked) return
-    if (imageRemovalFx?.phase === 'running') return
-
-    const targetImage = selectedSingle
-    setExportError(null)
-    if (imageRemovalSuccessTimerRef.current !== null) {
-      window.clearTimeout(imageRemovalSuccessTimerRef.current)
-      imageRemovalSuccessTimerRef.current = null
-    }
-    setImageRemovalFx({
-      targetId: targetImage.id,
-      phase: 'running',
-    })
-
-    void (async () => {
-      try {
-        const nextImage = await removeBackgroundFromSceneImage(targetImage)
-        setDoc(prev => ({
-          ...prev,
-          objects: prev.objects.map(obj =>
-            obj.id === targetImage.id && obj.type === 'image'
-              ? {
-                  ...obj,
-                  src: nextImage.src,
-                  naturalWidth: nextImage.naturalWidth,
-                  naturalHeight: nextImage.naturalHeight,
-                  crop: clampImageCropToFitNaturalSize(
-                    obj,
-                    nextImage.naturalWidth,
-                    nextImage.naturalHeight,
-                  ),
-                }
-              : obj,
-          ),
-        }))
-        setImageRemovalFx(current =>
-          current?.targetId === targetImage.id
-            ? {
-                targetId: targetImage.id,
-                phase: 'success',
-              }
-            : current,
-        )
-        imageRemovalSuccessTimerRef.current = window.setTimeout(() => {
-          setImageRemovalFx(current => (current?.targetId === targetImage.id ? null : current))
-          imageRemovalSuccessTimerRef.current = null
-        }, 900)
-      } catch (error) {
-        setImageRemovalFx(current => (current?.targetId === targetImage.id ? null : current))
-        setExportError(
-          error instanceof Error && error.message.trim()
-            ? error.message
-            : 'Could not remove the background.',
-        )
-      }
-    })()
-  }, [imageRemovalFx?.phase, selectedSingle, setDoc])
+    setImageRemovalUnavailableOpen(true)
+  }, [selectedSingle])
 
   const applyImageCropFromModal = useCallback((rect: ImageCropModalApplyPayload) => {
     const targetId = imageCropTargetIdRef.current
@@ -2900,6 +2829,10 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
             onCancel={cancelImageCrop}
             onApply={applyImageCropFromModal}
           />
+          <ImageRemovalUnavailableModal
+            open={imageRemovalUnavailableOpen}
+            onClose={() => setImageRemovalUnavailableOpen(false)}
+          />
           {ready && transformDimensionUi
             ? createPortal(
                 <div
@@ -2923,3 +2856,56 @@ const SceneEditor = forwardRef<SceneEditorHandle, SceneEditorProps>(function Sce
 })
 
 export default SceneEditor
+
+function ImageRemovalUnavailableModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  if (!open) return null
+
+  return (
+    <div
+      className="pointer-events-auto fixed inset-0 z-[20000] flex items-center justify-center bg-black/35 p-4 backdrop-blur-[2px]"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="image-removal-unavailable-title"
+      onMouseDown={e => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
+      <div
+        data-avnac-chrome
+        className="relative z-[1] w-full max-w-[34rem] overflow-hidden rounded-[2rem] border border-black/[0.08] bg-white shadow-[0_32px_90px_rgba(15,23,42,0.24)]"
+      >
+        <div className="bg-[linear-gradient(135deg,#fff6dd,#ffe8f1_48%,#eef8ff)] px-6 pb-6 pt-7 sm:px-8 sm:pb-7">
+          <div className="grid size-14 place-items-center rounded-2xl border border-white/70 bg-white/75 text-[#db0061] shadow-[0_10px_24px_rgba(219,0,97,0.12)]">
+            <HugeiconsIcon icon={FavouriteIcon} size={28} strokeWidth={1.75} />
+          </div>
+          <h2
+            id="image-removal-unavailable-title"
+            className="display-title mt-5 text-[clamp(2.4rem,9vw,3.6rem)] font-semibold leading-[0.94] text-[#323232]"
+          >
+            Background removal is paused
+          </h2>
+          <p className="mt-4 max-w-[28rem] text-base font-medium leading-7 text-[#555f6b] sm:text-lg">
+            {REMOVE_BG_UNAVAILABLE_MESSAGE}
+          </p>
+        </div>
+
+        <div className="grid gap-3 px-6 py-5 sm:px-8 sm:py-6">
+          <a
+            href="/sponsor"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-neutral-950 px-5 text-base font-bold text-white no-underline transition hover:bg-neutral-800"
+          >
+            <HugeiconsIcon icon={Coffee02Icon} size={18} strokeWidth={1.9} />
+            Sponsor Avnac
+          </a>
+          <button
+            type="button"
+            className="inline-flex min-h-12 cursor-pointer items-center justify-center rounded-full border border-black/[0.1] bg-white px-5 text-base font-bold text-neutral-900 transition hover:bg-black/[0.04]"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
