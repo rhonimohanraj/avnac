@@ -1,21 +1,14 @@
 import {
   createContext,
-  useContext,
-  type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type PointerEvent as ReactPointerEvent,
   type RefObject,
+  useContext,
 } from 'react'
 
-import type {
-  SceneObject,
-  SceneText,
-} from '../../lib/avnac-scene'
-import type { CanvasAlignKind } from '../canvas-element-toolbar'
-import type {
-  MarqueeRect,
-  ResizeHandleId,
-  SceneSnapGuide,
-} from '../../scene-engine/primitives'
+import type { SceneImage, SceneObject, SceneText } from '../../lib/avnac-scene'
+import type { MarqueeRect, ResizeHandleId, SceneSnapGuide } from '../../scene-engine/primitives'
+import type { CanvasAlignKind, CanvasSpacingAxis } from '../canvas-element-toolbar'
 
 type ElementToolbarLayout = {
   left: number
@@ -25,21 +18,23 @@ type ElementToolbarLayout = {
 
 export type CanvasStageContextValue = {
   actions: {
+    activatePage: (pageId: string, options?: { selectBackground?: boolean }) => void
+    addPage: (afterPageId?: string) => void
     alignElementToArtboard: (kind: CanvasAlignKind) => void
     alignSelectedElements: (kind: CanvasAlignKind) => void
     commitTextDraft: () => void
     copyElementToClipboard: () => void
     deleteSelection: () => void
+    deletePage: (pageId?: string) => void
+    duplicatePage: (sourcePageId?: string) => void
     duplicateElement: () => void
+    distributeGroupSpacing: (axis: CanvasSpacingAxis) => void
     groupSelection: () => void
-    onArtboardPointerEnter: () => void
+    onArtboardPointerEnter: (e: ReactPointerEvent<HTMLDivElement>) => void
     onArtboardPointerLeave: () => void
-    onArtboardPointerMove: () => void
+    onArtboardPointerMove: (e: ReactPointerEvent<HTMLDivElement>) => void
     onObjectHoverChange: (id: string, hovering: boolean) => void
-    onObjectPointerDown: (
-      e: ReactPointerEvent<HTMLDivElement>,
-      obj: SceneObject,
-    ) => void
+    onObjectPointerDown: (e: ReactPointerEvent<HTMLDivElement>, obj: SceneObject) => void
     onRotateHandlePointerDown: (e: ReactPointerEvent<HTMLButtonElement>) => void
     onSelectionHandlePointerDown: (
       e: ReactPointerEvent<HTMLButtonElement>,
@@ -49,6 +44,7 @@ export type CanvasStageContextValue = {
     onTextDraftChange: (value: string) => void
     onViewportPointerDown: (e: ReactPointerEvent<HTMLDivElement>) => void
     pasteFromClipboard: () => void
+    setGroupSpacing: (axis: CanvasSpacingAxis, gap: number) => void
     toggleElementLock: () => void
     ungroupSelection: () => void
   }
@@ -61,15 +57,23 @@ export type CanvasStageContextValue = {
   state: {
     backgroundActive: boolean
     backgroundHovered: boolean
+    deletingPageIds: string[]
     editingSelectedText: boolean
     elementToolbarAlignAlready: Record<CanvasAlignKind, boolean> | null
     elementToolbarCanAlignElements: boolean
+    elementToolbarCanDistributeGroupSpacing: boolean
     elementToolbarCanGroup: boolean
+    elementToolbarCanSpaceGroup: boolean
     elementToolbarCanUngroup: boolean
+    elementToolbarGroupSpacingValues: Record<CanvasSpacingAxis, number | null> | null
     elementToolbarLayout: ElementToolbarLayout | null
     elementToolbarLockedDisplay: boolean
     hasObjectSelected: boolean
     marqueeRect: MarqueeRect | null
+    imageRemovalEffect: {
+      object: SceneImage
+      phase: 'running' | 'success'
+    } | null
     ready: boolean
     scale: number
     selectedObjects: SceneObject[]
@@ -90,11 +94,7 @@ export function CanvasStageProvider({
   children: ReactNode
   value: CanvasStageContextValue
 }) {
-  return (
-    <CanvasStageContext.Provider value={value}>
-      {children}
-    </CanvasStageContext.Provider>
-  )
+  return <CanvasStageContext.Provider value={value}>{children}</CanvasStageContext.Provider>
 }
 
 export function useCanvasStageContext() {

@@ -1,28 +1,41 @@
-import { bgValueToCss, type BgValue } from '../components/background-popover'
-import { loadGoogleFontFamily } from './load-google-font'
-import type {
-  AvnacDocument,
-  SceneArrow,
-  SceneLine,
-  SceneObject,
-  SceneText,
-} from './avnac-document'
-import { shadowColorString } from './avnac-shadow'
+import { type BgValue, bgValueToCss } from '../components/background-popover'
+import type { AvnacDocument, SceneArrow, SceneLine, SceneObject, SceneText } from './avnac-document'
+import { iconSvgToDataUrl } from './avnac-icon'
 import { getExportSafeImageUrl } from './avnac-image-proxy'
-import { samplePenAnchorsToPolyline } from './avnac-vector-pen-bezier'
+import { shadowColorString } from './avnac-shadow'
 import {
   flattenVisibleStrokes,
   type VectorBoardDocument,
   type VectorBoardStroke,
 } from './avnac-vector-board-document'
+import { samplePenAnchorsToPolyline } from './avnac-vector-pen-bezier'
+import { loadGoogleFontFamily } from './load-google-font'
 
 const imageElementCache = new Map<string, Promise<HTMLImageElement>>()
 let measureCanvas: HTMLCanvasElement | null = null
+let textStrokeCanvas: HTMLCanvasElement | null = null
 
 export function sceneTextLineHeight(obj: SceneText): number {
   const raw = obj.lineHeight
   if (typeof raw !== 'number' || !Number.isFinite(raw)) return 1.22
   return Math.max(0.6, Math.min(4, raw))
+}
+
+export function sceneTextLetterSpacing(obj: SceneText): number {
+  const raw = obj.letterSpacing
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) return 0
+  return raw
+}
+
+export function measureSceneTextWidth(
+  obj: SceneText,
+  line: string,
+  ctx?: CanvasRenderingContext2D | null,
+): number {
+  const measure = ctx ?? getMeasureContext()
+  if (!measure) return Math.max(0, Array.from(line).length * (obj.fontSize * 0.6))
+  setTextFont(measure, obj)
+  return measureSceneTextLineWidth(measure, obj, line)
 }
 
 function getMeasureContext(): CanvasRenderingContext2D | null {
@@ -43,8 +56,8 @@ function makeLinearGradient(
   const dy = -Math.cos(rad)
   const cx = width / 2
   const cy = height / 2
-  const tx = dx !== 0 ? (width / 2) / Math.abs(dx) : Number.POSITIVE_INFINITY
-  const ty = dy !== 0 ? (height / 2) / Math.abs(dy) : Number.POSITIVE_INFINITY
+  const tx = dx !== 0 ? width / 2 / Math.abs(dx) : Number.POSITIVE_INFINITY
+  const ty = dy !== 0 ? height / 2 / Math.abs(dy) : Number.POSITIVE_INFINITY
   const halfLen = Math.min(tx, ty)
   const gradient = ctx.createLinearGradient(
     cx - dx * halfLen,
@@ -74,6 +87,16 @@ export function bgValueToSceneCss(value: BgValue): string {
 
 export function blurPxFromPct(blurPct: number): number {
   return Math.max(0, Math.min(28, (Math.max(0, Math.min(100, blurPct)) / 100) * 28))
+}
+
+export function containSquareInRect(width: number, height: number) {
+  const size = Math.max(0, Math.min(width, height))
+  return {
+    x: (width - size) / 2,
+    y: (height - size) / 2,
+    width: size,
+    height: size,
+  }
 }
 
 export async function loadSceneImageElement(rawUrl: string): Promise<HTMLImageElement> {
@@ -113,10 +136,7 @@ function applyShadow(ctx: CanvasRenderingContext2D, obj: SceneObject) {
   ctx.shadowOffsetY = obj.shadow.offsetY
 }
 
-function applyDash(
-  ctx: CanvasRenderingContext2D,
-  obj: SceneLine | SceneArrow,
-) {
+function applyDash(ctx: CanvasRenderingContext2D, obj: SceneLine | SceneArrow) {
   if (obj.lineStyle === 'dashed') {
     ctx.setLineDash([obj.strokeWidth * 3, obj.strokeWidth * 2])
     return
@@ -156,30 +176,18 @@ function drawRoundedRectPath(
 
 function fillAndStrokeShape(
   ctx: CanvasRenderingContext2D,
-  obj: Extract<
-    SceneObject,
-    { fill: BgValue; stroke: BgValue; strokeWidth: number }
-  >,
+  obj: Extract<SceneObject, { fill: BgValue; stroke: BgValue; strokeWidth: number }>,
 ) {
   ctx.fillStyle = bgValueToCanvasPaint(ctx, obj.fill, obj.width, obj.height)
   ctx.fill()
   if (obj.strokeWidth > 0) {
-    ctx.strokeStyle = bgValueToCanvasPaint(
-      ctx,
-      obj.stroke,
-      obj.width,
-      obj.height,
-    )
+    ctx.strokeStyle = bgValueToCanvasPaint(ctx, obj.stroke, obj.width, obj.height)
     ctx.lineWidth = obj.strokeWidth
     ctx.stroke()
   }
 }
 
-function polygonPoints(
-  sides: number,
-  width: number,
-  height: number,
-): [number, number][] {
+function polygonPoints(sides: number, width: number, height: number): [number, number][] {
   const pts: [number, number][] = []
   const count = Math.max(3, sides)
   const rx = width / 2
@@ -191,11 +199,7 @@ function polygonPoints(
   return pts
 }
 
-function starPoints(
-  points: number,
-  width: number,
-  height: number,
-): [number, number][] {
+function starPoints(points: number, width: number, height: number): [number, number][] {
   const out: [number, number][] = []
   const count = Math.max(4, points)
   const rx = width / 2
@@ -209,11 +213,7 @@ function starPoints(
   return out
 }
 
-function drawPointPath(
-  ctx: CanvasRenderingContext2D,
-  pts: [number, number][],
-  close = true,
-) {
+function drawPointPath(ctx: CanvasRenderingContext2D, pts: [number, number][], close = true) {
   if (pts.length === 0) return
   ctx.beginPath()
   ctx.moveTo(pts[0][0], pts[0][1])
@@ -226,6 +226,122 @@ function drawPointPath(
 function setTextFont(ctx: CanvasRenderingContext2D, obj: SceneText) {
   const weight = typeof obj.fontWeight === 'number' ? obj.fontWeight : obj.fontWeight
   ctx.font = `${obj.fontStyle} ${weight} ${obj.fontSize}px "${obj.fontFamily}", sans-serif`
+}
+
+function measureSceneTextLineWidth(
+  ctx: CanvasRenderingContext2D,
+  obj: SceneText,
+  line: string,
+): number {
+  if (!line) return 0
+  const letterSpacing = sceneTextLetterSpacing(obj)
+  if (letterSpacing === 0) return ctx.measureText(line).width
+  const chars = Array.from(line)
+  const width =
+    chars.reduce((sum, char) => sum + ctx.measureText(char).width, 0) +
+    Math.max(0, chars.length - 1) * letterSpacing
+  return Math.max(0, width)
+}
+
+function drawSceneTextLine(
+  ctx: CanvasRenderingContext2D,
+  obj: SceneText,
+  line: string,
+  x: number,
+  y: number,
+  mode: 'fill' | 'stroke',
+) {
+  const letterSpacing = sceneTextLetterSpacing(obj)
+  if (letterSpacing === 0 || line.length <= 1) {
+    if (mode === 'stroke') ctx.strokeText(line, x, y)
+    else ctx.fillText(line, x, y)
+    return
+  }
+  const chars = Array.from(line)
+  let cursor = x
+  for (let i = 0; i < chars.length; i += 1) {
+    const char = chars[i] ?? ''
+    if (mode === 'stroke') ctx.strokeText(char, cursor, y)
+    else ctx.fillText(char, cursor, y)
+    cursor += ctx.measureText(char).width
+    if (i < chars.length - 1) cursor += letterSpacing
+  }
+}
+
+function drawSceneTextLayout(
+  ctx: CanvasRenderingContext2D,
+  obj: SceneText,
+  text: ReturnType<typeof layoutSceneText>,
+  baselineOffset: number,
+  mode: 'fill' | 'stroke',
+) {
+  const textAlign = obj.textAlign === 'justify' ? 'left' : obj.textAlign
+  const anchorX = textAlign === 'center' ? obj.width / 2 : textAlign === 'right' ? obj.width : 0
+  for (let i = 0; i < text.lines.length; i += 1) {
+    const line = text.lines[i] ?? ''
+    const y = i * text.lineHeight
+    const baselineY = y + baselineOffset
+    const width = measureSceneTextLineWidth(ctx, obj, line)
+    const startX =
+      textAlign === 'center' ? anchorX - width / 2 : textAlign === 'right' ? anchorX - width : 0
+    drawSceneTextLine(ctx, obj, line, startX, baselineY, mode)
+  }
+}
+
+function splitSceneTextTokenToFit(
+  ctx: CanvasRenderingContext2D,
+  obj: SceneText,
+  token: string,
+  maxWidth: number,
+): string[] {
+  if (!token) return ['']
+  const chars = Array.from(token)
+  const parts: string[] = []
+  let current = ''
+  for (const char of chars) {
+    const next = current + char
+    if (measureSceneTextLineWidth(ctx, obj, next) <= maxWidth || !current) {
+      current = next
+      continue
+    }
+    parts.push(current)
+    current = char
+  }
+  if (current) parts.push(current)
+  return parts
+}
+
+function cssLineBoxBaselineOffset(
+  ctx: CanvasRenderingContext2D,
+  obj: SceneText,
+  lineHeight: number,
+): number {
+  const metrics = ctx.measureText('Mg') as TextMetrics & {
+    fontBoundingBoxAscent?: number
+    fontBoundingBoxDescent?: number
+  }
+  const ascent =
+    typeof metrics.fontBoundingBoxAscent === 'number' &&
+    Number.isFinite(metrics.fontBoundingBoxAscent)
+      ? metrics.fontBoundingBoxAscent
+      : metrics.actualBoundingBoxAscent || obj.fontSize * 0.8
+  const descent =
+    typeof metrics.fontBoundingBoxDescent === 'number' &&
+    Number.isFinite(metrics.fontBoundingBoxDescent)
+      ? metrics.fontBoundingBoxDescent
+      : metrics.actualBoundingBoxDescent || obj.fontSize * 0.2
+  const fontBox = Math.max(1, ascent + descent)
+  return (lineHeight - fontBox) / 2 + ascent
+}
+
+export function sceneTextBaselineOffset(
+  obj: SceneText,
+  ctx?: CanvasRenderingContext2D | null,
+): number {
+  const measure = ctx ?? getMeasureContext()
+  if (!measure) return obj.fontSize * 0.8
+  setTextFont(measure, obj)
+  return cssLineBoxBaselineOffset(measure, obj, obj.fontSize * sceneTextLineHeight(obj))
 }
 
 export function layoutSceneText(
@@ -259,12 +375,29 @@ export function layoutSceneText(
     let current = ''
     for (const word of words) {
       const next = current ? `${current}${word}` : word
-      if (measure.measureText(next).width <= maxWidth || !current) {
+      if (measureSceneTextLineWidth(measure, obj, next) <= maxWidth) {
         current = next
         continue
       }
+      if (!current) {
+        const split = splitSceneTextTokenToFit(measure, obj, word.trimStart(), maxWidth)
+        current = split.pop() ?? ''
+        lines.push(...split)
+        continue
+      }
       lines.push(current.trimEnd())
-      current = word.trimStart()
+      const remainder = word.trimStart()
+      if (!remainder) {
+        current = ''
+        continue
+      }
+      if (measureSceneTextLineWidth(measure, obj, remainder) <= maxWidth) {
+        current = remainder
+        continue
+      }
+      const split = splitSceneTextTokenToFit(measure, obj, remainder, maxWidth)
+      current = split.pop() ?? ''
+      lines.push(...split)
     }
     lines.push(current.trimEnd())
   }
@@ -284,50 +417,81 @@ export async function preloadFontsForDocument(doc: AvnacDocument): Promise<void>
     }
   }
   for (const obj of doc.objects) visit(obj)
-  await Promise.all([...fonts].map((font) => loadGoogleFontFamily(font)))
+  await Promise.all([...fonts].map(font => loadGoogleFontFamily(font)))
 }
 
 function drawTextObject(ctx: CanvasRenderingContext2D, obj: SceneText) {
   const text = layoutSceneText(obj, ctx)
   setTextFont(ctx, obj)
-  ctx.textBaseline = 'top'
-  ctx.fillStyle = bgValueToCanvasPaint(ctx, obj.fill, obj.width, obj.height)
-  ctx.strokeStyle = bgValueToCanvasPaint(ctx, obj.stroke, obj.width, obj.height)
-  ctx.lineWidth = obj.strokeWidth
+  ctx.textBaseline = 'alphabetic'
+  ctx.textAlign = 'left'
+  const fillPaint = bgValueToCanvasPaint(ctx, obj.fill, obj.width, obj.height)
   const textAlign = obj.textAlign === 'justify' ? 'left' : obj.textAlign
-  ctx.textAlign = textAlign
-  const anchorX =
-    textAlign === 'center' ? obj.width / 2 : textAlign === 'right' ? obj.width : 0
+  const anchorX = textAlign === 'center' ? obj.width / 2 : textAlign === 'right' ? obj.width : 0
+  const baselineOffset = cssLineBoxBaselineOffset(ctx, obj, text.lineHeight)
+  if (obj.strokeWidth > 0) {
+    drawTextOutsideStroke(ctx, obj, text, baselineOffset)
+  }
   for (let i = 0; i < text.lines.length; i += 1) {
     const line = text.lines[i] ?? ''
     const y = i * text.lineHeight
-    if (obj.strokeWidth > 0) ctx.strokeText(line, anchorX, y)
-    ctx.fillText(line, anchorX, y)
+    const baselineY = y + baselineOffset
+    const width = measureSceneTextLineWidth(ctx, obj, line)
+    const startX =
+      textAlign === 'center' ? anchorX - width / 2 : textAlign === 'right' ? anchorX - width : 0
+    ctx.fillStyle = fillPaint
+    drawSceneTextLine(ctx, obj, line, startX, baselineY, 'fill')
     if (obj.underline && line.length > 0) {
-      const metrics = ctx.measureText(line)
-      const width =
-        metrics.actualBoundingBoxRight +
-        metrics.actualBoundingBoxLeft
-      const startX =
-        textAlign === 'center'
-          ? anchorX - width / 2
-          : textAlign === 'right'
-            ? anchorX - width
-            : anchorX
-      const underlineY = y + obj.fontSize * 1.08
+      const underlineY = baselineY + obj.fontSize * 0.12
       ctx.beginPath()
       ctx.moveTo(startX, underlineY)
       ctx.lineTo(startX + width, underlineY)
       ctx.lineWidth = Math.max(1, obj.fontSize * 0.06)
-      ctx.strokeStyle = bgValueToCanvasPaint(
-        ctx,
-        obj.fill,
-        obj.width,
-        obj.height,
-      )
+      ctx.strokeStyle = fillPaint
       ctx.stroke()
     }
   }
+}
+
+function drawTextOutsideStroke(
+  ctx: CanvasRenderingContext2D,
+  obj: SceneText,
+  text: ReturnType<typeof layoutSceneText>,
+  baselineOffset: number,
+) {
+  if (typeof document === 'undefined') {
+    ctx.strokeStyle = bgValueToCanvasPaint(ctx, obj.stroke, obj.width, obj.height)
+    ctx.lineWidth = obj.strokeWidth
+    drawSceneTextLayout(ctx, obj, text, baselineOffset, 'stroke')
+    return
+  }
+  if (!textStrokeCanvas) textStrokeCanvas = document.createElement('canvas')
+  const pad = Math.ceil(Math.max(2, obj.strokeWidth * 2))
+  const matrix = ctx.getTransform()
+  const dpr = Math.max(1, Math.hypot(matrix.a, matrix.b) || 1)
+  const width = Math.max(1, Math.ceil((obj.width + pad * 2) * dpr))
+  const height = Math.max(1, Math.ceil((Math.max(obj.height, text.height) + pad * 2) * dpr))
+  textStrokeCanvas.width = width
+  textStrokeCanvas.height = height
+  const strokeCtx = textStrokeCanvas.getContext('2d')
+  if (!strokeCtx) return
+  strokeCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  strokeCtx.clearRect(0, 0, width / dpr, height / dpr)
+  strokeCtx.translate(pad, pad)
+  setTextFont(strokeCtx, obj)
+  strokeCtx.textBaseline = 'alphabetic'
+  strokeCtx.textAlign = 'left'
+  strokeCtx.lineJoin = 'round'
+  strokeCtx.lineCap = 'round'
+  strokeCtx.miterLimit = 2
+  strokeCtx.strokeStyle = bgValueToCanvasPaint(strokeCtx, obj.stroke, obj.width, obj.height)
+  strokeCtx.lineWidth = obj.strokeWidth * 2
+  drawSceneTextLayout(strokeCtx, obj, text, baselineOffset, 'stroke')
+  strokeCtx.globalCompositeOperation = 'destination-out'
+  strokeCtx.fillStyle = '#000000'
+  drawSceneTextLayout(strokeCtx, obj, text, baselineOffset, 'fill')
+  strokeCtx.globalCompositeOperation = 'source-over'
+  ctx.drawImage(textStrokeCanvas, -pad, -pad, width / dpr, height / dpr)
 }
 
 function drawArrowPath(ctx: CanvasRenderingContext2D, obj: SceneArrow) {
@@ -484,15 +648,7 @@ async function drawSceneObject(
       break
     case 'ellipse':
       ctx.beginPath()
-      ctx.ellipse(
-        obj.width / 2,
-        obj.height / 2,
-        obj.width / 2,
-        obj.height / 2,
-        0,
-        0,
-        Math.PI * 2,
-      )
+      ctx.ellipse(obj.width / 2, obj.height / 2, obj.width / 2, obj.height / 2, 0, 0, Math.PI * 2)
       fillAndStrokeShape(ctx, obj)
       break
     case 'polygon':
@@ -531,21 +687,44 @@ async function drawSceneObject(
       break
     case 'image': {
       const img = await loadSceneImageElement(obj.src)
+      const cropRotation = obj.crop.rotation || 0
       ctx.save()
       drawRoundedRectPath(ctx, 0, 0, obj.width, obj.height, obj.cornerRadius)
       ctx.clip()
-      ctx.drawImage(
-        img,
-        obj.crop.x,
-        obj.crop.y,
-        obj.crop.width,
-        obj.crop.height,
-        0,
-        0,
-        obj.width,
-        obj.height,
-      )
+      if (Math.abs(cropRotation) < 0.001) {
+        ctx.drawImage(
+          img,
+          obj.crop.x,
+          obj.crop.y,
+          obj.crop.width,
+          obj.crop.height,
+          0,
+          0,
+          obj.width,
+          obj.height,
+        )
+      } else {
+        const scaleX = obj.width / Math.max(1, obj.crop.width)
+        const scaleY = obj.height / Math.max(1, obj.crop.height)
+        const cropCenterX = obj.crop.x + obj.crop.width / 2
+        const cropCenterY = obj.crop.y + obj.crop.height / 2
+        ctx.translate(obj.width / 2, obj.height / 2)
+        ctx.scale(scaleX, scaleY)
+        ctx.rotate((cropRotation * Math.PI) / 180)
+        ctx.drawImage(img, -cropCenterX, -cropCenterY)
+      }
       ctx.restore()
+      break
+    }
+    case 'icon': {
+      const img = await loadSceneImageElement(
+        iconSvgToDataUrl(obj.svg, {
+          fill: obj.fill,
+          strokeWidth: obj.strokeWidth,
+        }),
+      )
+      const iconBox = containSquareInRect(obj.width, obj.height)
+      ctx.drawImage(img, iconBox.x, iconBox.y, iconBox.width, iconBox.height)
       break
     }
     case 'vector-board': {
@@ -605,11 +784,6 @@ export async function renderAvnacDocumentToDataUrl(
   await renderAvnacDocumentToCanvas(ctx, doc, vectorBoardDocs, {
     transparent: opts?.transparent,
   })
-  const mimeType =
-    format === 'jpg'
-      ? 'image/jpeg'
-      : format === 'webp'
-        ? 'image/webp'
-        : 'image/png'
+  const mimeType = format === 'jpg' ? 'image/jpeg' : format === 'webp' ? 'image/webp' : 'image/png'
   return canvas.toDataURL(mimeType)
 }

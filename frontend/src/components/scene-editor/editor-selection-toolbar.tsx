@@ -1,32 +1,19 @@
+import { AiMagicIcon, CropIcon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { CropIcon } from '@hugeicons/core-free-icons'
-
 import ArtboardResizeToolbarControl from '../artboard-resize-toolbar-control'
-import BackgroundPopover, {
-  bgValueToSwatch,
-} from '../background-popover'
+import BackgroundPopover, { bgValueToSwatch } from '../background-popover'
 import CornerRadiusToolbarControl from '../corner-radius-toolbar-control'
-import {
-  FloatingToolbarDivider,
-  FloatingToolbarShell,
-  floatingToolbarIconButton,
-} from '../floating-toolbar-shell'
+import PaintPopoverControl from '../paint-popover-control'
 import ShapeOptionsToolbar from '../shape-options-toolbar'
 import TextFormatToolbar from '../text-format-toolbar'
+import { Button, Divider, IconButton, Toolbar } from '../ui'
 import { useEditorSelectionToolbar } from './editor-selection-toolbar-context'
 import { useEditorStore } from './editor-store'
 
-function backgroundTopBtn(disabled?: boolean) {
-  const base =
-    'flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-neutral-700 outline-none transition-colors hover:bg-black/[0.06]'
-  if (disabled) return `${base} pointer-events-none cursor-not-allowed opacity-35`
-  return base
-}
-
 export function EditorSelectionToolbar() {
   const { actions, refs, state } = useEditorSelectionToolbar()
-  const artboard = useEditorStore((storeState) => storeState.doc.artboard)
-  const bg = useEditorStore((storeState) => storeState.doc.bg)
+  const artboard = useEditorStore(storeState => storeState.doc.artboard)
+  const bg = useEditorStore(storeState => storeState.doc.bg)
   const {
     applyArrowLineStyle,
     applyArrowPathType,
@@ -41,117 +28,157 @@ export function EditorSelectionToolbar() {
     onArtboardResize,
     onTextFormatChange,
     openImageCropModal,
+    removeImageBackground,
     toggleBackgroundPopover,
   } = actions
+  const { backgroundPopoverAnchorRef, backgroundPopoverPanelRef, selectionToolsRef, viewportRef } =
+    refs
   const {
-    backgroundPopoverAnchorRef,
-    backgroundPopoverPanelRef,
-    selectionToolsRef,
-    viewportRef,
-  } = refs
-  const {
+    backgroundActive,
     backgroundPopoverOpenUpward,
     backgroundPopoverShiftX,
     bgPopoverOpen,
-    canvasBodySelected,
     elementToolbarLockedDisplay,
     hasObjectSelected,
     imageCornerToolbar,
+    imageRemovalState,
     ready,
+    selectionFillPaint,
     selectionEffectsFooterSlot,
     shapeToolbarModel,
     textToolbarValues,
   } = state
+
+  const showTextToolbar = ready && !!textToolbarValues
+  const showShapeToolbar = ready && !textToolbarValues && !!shapeToolbarModel
+  const showEffectsToolbar = ready && hasObjectSelected && !textToolbarValues && !shapeToolbarModel
+  const showBackgroundToolbar =
+    ready && backgroundActive && !hasObjectSelected && !textToolbarValues && !shapeToolbarModel
+
+  if (!showTextToolbar && !showShapeToolbar && !showEffectsToolbar && !showBackgroundToolbar) {
+    return null
+  }
+
   return (
     <div
       ref={selectionToolsRef}
-      className="pointer-events-auto relative z-30 flex h-14 w-full shrink-0 items-center justify-center px-1 sm:px-2"
+      className="pointer-events-none absolute left-1/2 -top-3 z-30 -translate-x-1/2"
     >
-      {ready && textToolbarValues ? (
-        <TextFormatToolbar
-          values={textToolbarValues}
-          onChange={onTextFormatChange}
-          footerSlot={selectionEffectsFooterSlot}
-        />
+      {showTextToolbar ? (
+        <div className="pointer-events-auto">
+          <TextFormatToolbar
+            values={textToolbarValues}
+            onChange={onTextFormatChange}
+            footerSlot={selectionEffectsFooterSlot}
+          />
+        </div>
       ) : null}
-      {ready && !textToolbarValues && shapeToolbarModel ? (
-        <ShapeOptionsToolbar
-          meta={shapeToolbarModel.meta}
-          paintValue={shapeToolbarModel.paint}
-          onPaintChange={applyPaintToSelection}
-          onPolygonSides={applyPolygonSides}
-          onStarPoints={applyStarPoints}
-          onArrowLineStyle={applyArrowLineStyle}
-          onArrowRoundedEnds={applyArrowRoundedEnds}
-          onArrowStrokeWidth={applyArrowStrokeWidth}
-          onArrowPathType={applyArrowPathType}
-          rectCornerRadius={shapeToolbarModel.rectCornerRadius}
-          rectCornerRadiusMax={shapeToolbarModel.rectCornerRadiusMax}
-          onRectCornerRadius={
-            shapeToolbarModel.meta.kind === 'rect'
-              ? applyRectCornerRadius
-              : undefined
-          }
-          footerSlot={selectionEffectsFooterSlot}
-        />
+      {showShapeToolbar ? (
+        <div className="pointer-events-auto">
+          <ShapeOptionsToolbar
+            meta={shapeToolbarModel.meta}
+            paintValue={shapeToolbarModel.paint}
+            onPaintChange={applyPaintToSelection}
+            onPolygonSides={applyPolygonSides}
+            onStarPoints={applyStarPoints}
+            onArrowLineStyle={applyArrowLineStyle}
+            onArrowRoundedEnds={applyArrowRoundedEnds}
+            onArrowStrokeWidth={applyArrowStrokeWidth}
+            onArrowPathType={applyArrowPathType}
+            rectCornerRadius={shapeToolbarModel.rectCornerRadius}
+            rectCornerRadiusMax={shapeToolbarModel.rectCornerRadiusMax}
+            onRectCornerRadius={
+              shapeToolbarModel.meta.kind === 'rect' ? applyRectCornerRadius : undefined
+            }
+            footerSlot={selectionEffectsFooterSlot}
+          />
+        </div>
       ) : null}
-      {ready && hasObjectSelected && !textToolbarValues && !shapeToolbarModel ? (
-        <FloatingToolbarShell role="toolbar" aria-label="Selection">
-          <div className="flex items-center py-1 pl-2 pr-2">
+      {showEffectsToolbar ? (
+        <div className="pointer-events-auto">
+          <Toolbar compact className="pl-2 pr-2" aria-label="Selection">
+            {selectionFillPaint ? (
+              <>
+                <PaintPopoverControl
+                  compact
+                  value={selectionFillPaint}
+                  onChange={applyPaintToSelection}
+                  title="Fill color and gradient"
+                  ariaLabel="Fill color and gradient"
+                />
+                <Divider orientation="vertical" />
+              </>
+            ) : null}
             {imageCornerToolbar ? (
               <>
-                <button
-                  type="button"
+                <IconButton
+                  icon={CropIcon}
+                  label="Crop image"
                   disabled={elementToolbarLockedDisplay}
-                  className={[
-                    floatingToolbarIconButton(false),
-                    elementToolbarLockedDisplay
-                      ? 'pointer-events-none opacity-40'
-                      : '',
-                  ].join(' ')}
+                  className={elementToolbarLockedDisplay ? 'pointer-events-none opacity-40' : ''}
                   onClick={openImageCropModal}
-                  aria-label="Crop image"
-                  title="Crop image"
+                />
+                <Button
+                  disabled={elementToolbarLockedDisplay || imageRemovalState === 'running'}
+                  variant="ghost"
+                  size="xs"
+                  className={[
+                    'h-8 gap-1.5 rounded-lg px-2.5 text-[13px] font-medium',
+                    elementToolbarLockedDisplay ? 'pointer-events-none opacity-40' : '',
+                    imageRemovalState !== 'idle' ? 'bg-black/[0.08] text-neutral-900' : '',
+                  ].join(' ')}
+                  onClick={removeImageBackground}
+                  aria-label="Remove background"
+                  title="Remove background"
+                  iconBefore={<HugeiconsIcon icon={AiMagicIcon} size={18} strokeWidth={1.75} />}
                 >
-                  <HugeiconsIcon icon={CropIcon} size={20} strokeWidth={1.75} />
-                </button>
+                  {imageRemovalState === 'running'
+                    ? 'Removing…'
+                    : imageRemovalState === 'success'
+                      ? 'Removed'
+                      : 'Remove bg'}
+                </Button>
+                <Divider orientation="vertical" />
                 <CornerRadiusToolbarControl
                   value={imageCornerToolbar.radius}
                   max={imageCornerToolbar.max}
                   onChange={applyImageCornerRadius}
                   disabled={elementToolbarLockedDisplay}
                 />
-                <FloatingToolbarDivider />
+                <Divider orientation="vertical" />
               </>
             ) : null}
             {selectionEffectsFooterSlot}
-          </div>
-        </FloatingToolbarShell>
+          </Toolbar>
+        </div>
       ) : null}
-      {ready && !textToolbarValues && !shapeToolbarModel && canvasBodySelected ? (
-        <div ref={backgroundPopoverAnchorRef} className="relative">
-          <div className="flex items-center rounded-full border border-black/[0.08] bg-white/90 px-2 py-1 shadow-[0_4px_20px_rgba(0,0,0,0.08)] backdrop-blur-md">
+      {showBackgroundToolbar ? (
+        <div ref={backgroundPopoverAnchorRef} className="pointer-events-auto relative">
+          <Toolbar compact className="px-2 py-1">
             <ArtboardResizeToolbarControl
               width={artboard.width}
               height={artboard.height}
               onResize={onArtboardResize}
               viewportRef={viewportRef}
             />
-            <FloatingToolbarDivider />
-            <button
-              type="button"
-              className={backgroundTopBtn(false)}
+            <Divider orientation="vertical" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 gap-2 rounded-lg px-3 text-sm"
               onClick={toggleBackgroundPopover}
               aria-label="Page background"
               aria-expanded={bgPopoverOpen}
+              iconBefore={
+                <span
+                  className="size-4 rounded-full border border-black/10"
+                  style={bgValueToSwatch(bg)}
+                />
+              }
             >
-              <span
-                className="size-4 rounded-full border border-black/10"
-                style={bgValueToSwatch(bg)}
-              />
               Background
-            </button>
-          </div>
+            </Button>
+          </Toolbar>
           {bgPopoverOpen ? (
             <div
               ref={backgroundPopoverPanelRef}

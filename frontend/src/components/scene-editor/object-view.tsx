@@ -1,20 +1,20 @@
 import {
+  type CSSProperties,
+  createElement,
+  type PointerEvent as ReactPointerEvent,
   useLayoutEffect,
   useRef,
-  type CSSProperties,
-  type PointerEvent as ReactPointerEvent,
 } from 'react'
 
+import { iconSvgNodeAttrs, sceneIconPaintValue } from '../../lib/avnac-icon'
+import type { SceneArrow, SceneObject, SceneText } from '../../lib/avnac-scene'
 import {
-  type SceneArrow,
-  type SceneObject,
-  type SceneText,
-} from '../../lib/avnac-scene'
-import {
-  bgValueToSceneCss,
   blurPxFromPct,
   layoutSceneText,
+  measureSceneTextWidth,
   renderVectorBoardDocumentToCanvas,
+  sceneTextBaselineOffset,
+  sceneTextLetterSpacing,
   sceneTextLineHeight,
 } from '../../lib/avnac-scene-render'
 import type { VectorBoardDocument } from '../../lib/avnac-vector-board-document'
@@ -57,7 +57,7 @@ function svgGradientDef(id: string, value: BgValue) {
   const ends = gradientEndpoints(value.angle)
   return (
     <linearGradient id={id} x1={ends.x1} y1={ends.y1} x2={ends.x2} y2={ends.y2}>
-      {value.stops.map((stop) => (
+      {value.stops.map(stop => (
         <stop
           key={`${id}-${stop.offset}-${stop.color}`}
           offset={`${stop.offset * 100}%`}
@@ -154,11 +154,12 @@ export function SceneObjectView({
     return (
       <div
         style={style}
-        onPointerDown={(e) => onObjectPointerDown(e, obj)}
+        data-avnac-scene-object
+        onPointerDown={e => onObjectPointerDown(e, obj)}
         {...hoverProps}
         title={obj.locked ? 'Locked group' : undefined}
       >
-        {obj.children.map((child) => (
+        {obj.children.map(child => (
           <div key={child.id} style={{ pointerEvents: 'none' }}>
             <SceneObjectView
               obj={child}
@@ -180,10 +181,14 @@ export function SceneObjectView({
   if (obj.type === 'image') {
     const scaleX = obj.width / Math.max(1, obj.crop.width)
     const scaleY = obj.height / Math.max(1, obj.crop.height)
+    const cropRotation = obj.crop.rotation || 0
+    const cropCenterX = obj.crop.x + obj.crop.width / 2
+    const cropCenterY = obj.crop.y + obj.crop.height / 2
     return (
       <div
         style={style}
-        onPointerDown={(e) => onObjectPointerDown(e, obj)}
+        data-avnac-scene-object
+        onPointerDown={e => onObjectPointerDown(e, obj)}
         {...hoverProps}
         title={obj.locked ? 'Locked image' : undefined}
       >
@@ -197,11 +202,13 @@ export function SceneObjectView({
             draggable={false}
             className="pointer-events-none absolute select-none"
             style={{
-              left: -obj.crop.x * scaleX,
-              top: -obj.crop.y * scaleY,
+              left: obj.width / 2 - cropCenterX * scaleX,
+              top: obj.height / 2 - cropCenterY * scaleY,
               width: obj.naturalWidth * scaleX,
               height: obj.naturalHeight * scaleY,
               maxWidth: 'none',
+              transform: `rotate(${cropRotation}deg)`,
+              transformOrigin: `${cropCenterX * scaleX}px ${cropCenterY * scaleY}px`,
             }}
           />
         </div>
@@ -213,7 +220,8 @@ export function SceneObjectView({
     return (
       <div
         style={style}
-        onPointerDown={(e) => onObjectPointerDown(e, obj)}
+        data-avnac-scene-object
+        onPointerDown={e => onObjectPointerDown(e, obj)}
         {...hoverProps}
         title={obj.locked ? 'Locked vector board' : undefined}
       >
@@ -228,10 +236,20 @@ export function SceneObjectView({
 
   if (obj.type === 'text') {
     const layout = layoutSceneText(obj)
-    const draftLayout = isEditing
-      ? layoutSceneText({ ...obj, text: textDraft })
-      : layout
+    const draftLayout = isEditing ? layoutSceneText({ ...obj, text: textDraft }) : layout
     const lineHeight = sceneTextLineHeight(obj)
+    const letterSpacing = sceneTextLetterSpacing(obj)
+    const lineHeightPx = obj.fontSize * lineHeight
+    const baselineOffset = sceneTextBaselineOffset(obj)
+    const textHeight = Math.max(layout.height, obj.height)
+    const textFillId = `${defsIdBase}-text-fill`
+    const textStrokeId = `${defsIdBase}-text-stroke`
+    const textStrokeMaskId = `${defsIdBase}-text-stroke-mask`
+    const textStrokeMaskPad = Math.ceil(Math.max(2, obj.strokeWidth * 2))
+    const textAnchor =
+      obj.textAlign === 'center' ? 'middle' : obj.textAlign === 'right' ? 'end' : 'start'
+    const anchorX =
+      obj.textAlign === 'center' ? obj.width / 2 : obj.textAlign === 'right' ? obj.width : 0
     return (
       <div
         style={
@@ -242,9 +260,8 @@ export function SceneObjectView({
               }
             : style
         }
-        onPointerDown={
-          isEditing ? undefined : (e) => onObjectPointerDown(e, obj)
-        }
+        data-avnac-scene-object
+        onPointerDown={isEditing ? undefined : e => onObjectPointerDown(e, obj)}
         onDoubleClick={() => onTextDoubleClick(obj)}
         {...hoverProps}
         title={obj.locked ? 'Locked text' : undefined}
@@ -252,10 +269,10 @@ export function SceneObjectView({
         {isEditing ? (
           <textarea
             value={textDraft}
-            onChange={(e) => onTextDraftChange(e.target.value)}
+            onChange={e => onTextDraftChange(e.target.value)}
             onBlur={onTextDraftCommit}
-            onPointerDown={(e) => e.stopPropagation()}
-            onDoubleClick={(e) => e.stopPropagation()}
+            onPointerDown={e => e.stopPropagation()}
+            onDoubleClick={e => e.stopPropagation()}
             autoFocus
             spellCheck={false}
             className="h-full w-full resize-none overflow-hidden border-0 bg-transparent p-0 outline-none select-text"
@@ -265,40 +282,157 @@ export function SceneObjectView({
               fontStyle: obj.fontStyle,
               fontWeight: String(obj.fontWeight),
               textAlign: obj.textAlign,
+              letterSpacing,
               color: obj.fill.type === 'solid' ? obj.fill.color : '#171717',
               lineHeight: String(lineHeight),
               boxSizing: 'border-box',
             }}
           />
         ) : (
-          <div
-            className="pointer-events-none h-full w-full whitespace-pre-wrap break-words"
-            style={{
-              fontFamily: `"${obj.fontFamily}", sans-serif`,
-              fontSize: obj.fontSize,
-              fontStyle: obj.fontStyle,
-              fontWeight: String(obj.fontWeight),
-              textAlign: obj.textAlign,
-              lineHeight,
-              height: Math.max(layout.height, obj.height),
-              color: obj.fill.type === 'solid' ? obj.fill.color : 'transparent',
-              backgroundImage:
-                obj.fill.type === 'gradient' ? bgValueToSceneCss(obj.fill) : undefined,
-              WebkitBackgroundClip:
-                obj.fill.type === 'gradient' ? 'text' : undefined,
-              backgroundClip:
-                obj.fill.type === 'gradient' ? 'text' : undefined,
-              textDecoration: obj.underline ? 'underline' : undefined,
-              textDecorationThickness: obj.underline ? Math.max(1, obj.fontSize * 0.06) : undefined,
-              WebkitTextStroke:
-                obj.strokeWidth > 0 && obj.stroke.type === 'solid'
-                  ? `${obj.strokeWidth}px ${obj.stroke.color}`
-                  : undefined,
-            }}
+          <svg
+            className="pointer-events-none block"
+            width={obj.width}
+            height={textHeight}
+            viewBox={`0 0 ${obj.width} ${textHeight}`}
+            overflow="visible"
           >
-            {obj.text}
-          </div>
+            <defs>
+              {svgGradientDef(textFillId, obj.fill)}
+              {svgGradientDef(textStrokeId, obj.stroke)}
+              {obj.strokeWidth > 0 ? (
+                <mask
+                  id={textStrokeMaskId}
+                  maskUnits="userSpaceOnUse"
+                  x={-textStrokeMaskPad}
+                  y={-textStrokeMaskPad}
+                  width={obj.width + textStrokeMaskPad * 2}
+                  height={textHeight + textStrokeMaskPad * 2}
+                >
+                  <rect
+                    x={-textStrokeMaskPad}
+                    y={-textStrokeMaskPad}
+                    width={obj.width + textStrokeMaskPad * 2}
+                    height={textHeight + textStrokeMaskPad * 2}
+                    fill="white"
+                  />
+                  {layout.lines.map((line, index) => {
+                    const y = baselineOffset + index * lineHeightPx
+                    return (
+                      <text
+                        key={`${obj.id}-stroke-mask-${index}`}
+                        x={anchorX}
+                        y={y}
+                        xmlSpace="preserve"
+                        fill="black"
+                        fontFamily={obj.fontFamily}
+                        fontSize={obj.fontSize}
+                        fontStyle={obj.fontStyle}
+                        fontWeight={String(obj.fontWeight)}
+                        letterSpacing={letterSpacing}
+                        textAnchor={textAnchor}
+                      >
+                        {line}
+                      </text>
+                    )
+                  })}
+                </mask>
+              ) : null}
+            </defs>
+            {layout.lines.map((line, index) => {
+              const y = baselineOffset + index * lineHeightPx
+              const lineWidth = measureSceneTextWidth(obj, line)
+              const lineStartX =
+                obj.textAlign === 'center'
+                  ? anchorX - lineWidth / 2
+                  : obj.textAlign === 'right'
+                    ? anchorX - lineWidth
+                    : anchorX
+
+              return (
+                <g key={`${obj.id}-line-${index}`}>
+                  {obj.strokeWidth > 0 ? (
+                    <text
+                      x={anchorX}
+                      y={y}
+                      xmlSpace="preserve"
+                      fill="none"
+                      stroke={svgPaintUrl(textStrokeId, obj.stroke)}
+                      strokeWidth={obj.strokeWidth * 2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeMiterlimit={2}
+                      mask={`url(#${textStrokeMaskId})`}
+                      fontFamily={obj.fontFamily}
+                      fontSize={obj.fontSize}
+                      fontStyle={obj.fontStyle}
+                      fontWeight={String(obj.fontWeight)}
+                      letterSpacing={letterSpacing}
+                      textAnchor={textAnchor}
+                    >
+                      {line}
+                    </text>
+                  ) : null}
+                  <text
+                    x={anchorX}
+                    y={y}
+                    xmlSpace="preserve"
+                    fill={svgPaintUrl(textFillId, obj.fill)}
+                    fontFamily={obj.fontFamily}
+                    fontSize={obj.fontSize}
+                    fontStyle={obj.fontStyle}
+                    fontWeight={String(obj.fontWeight)}
+                    letterSpacing={letterSpacing}
+                    textAnchor={textAnchor}
+                  >
+                    {line}
+                  </text>
+                  {obj.underline && line.length > 0 ? (
+                    <line
+                      x1={lineStartX}
+                      x2={lineStartX + lineWidth}
+                      y1={y + obj.fontSize * 0.12}
+                      y2={y + obj.fontSize * 0.12}
+                      stroke={svgPaintUrl(textFillId, obj.fill)}
+                      strokeWidth={Math.max(1, obj.fontSize * 0.06)}
+                      strokeLinecap="round"
+                    />
+                  ) : null}
+                </g>
+              )
+            })}
+          </svg>
         )}
+      </div>
+    )
+  }
+
+  if (obj.type === 'icon') {
+    const iconFillId = `${defsIdBase}-icon-fill`
+    const iconPaint = sceneIconPaintValue(obj.fill, iconFillId)
+    return (
+      <div
+        style={style}
+        data-avnac-scene-object
+        onPointerDown={e => onObjectPointerDown(e, obj)}
+        {...hoverProps}
+        title={obj.locked ? 'Locked icon' : undefined}
+      >
+        <svg
+          width={obj.width}
+          height={obj.height}
+          viewBox="0 0 24 24"
+          preserveAspectRatio="xMidYMid meet"
+          fill="none"
+          style={{ display: 'block', overflow: 'visible' }}
+        >
+          <defs>{svgGradientDef(iconFillId, obj.fill)}</defs>
+          {obj.svg.map(([tag, attrs], index) =>
+            createElement(tag, {
+              ...iconSvgNodeAttrs(attrs, iconPaint, obj.strokeWidth),
+              key: attrs.key ?? `${obj.id}-icon-${index}`,
+            }),
+          )}
+        </svg>
       </div>
     )
   }
@@ -313,7 +447,8 @@ export function SceneObjectView({
     return (
       <div
         style={style}
-        onPointerDown={(e) => onObjectPointerDown(e, obj)}
+        data-avnac-scene-object
+        onPointerDown={e => onObjectPointerDown(e, obj)}
         {...hoverProps}
         title={obj.locked ? 'Locked shape' : undefined}
       >
@@ -343,7 +478,8 @@ export function SceneObjectView({
     return (
       <div
         style={style}
-        onPointerDown={(e) => onObjectPointerDown(e, obj)}
+        data-avnac-scene-object
+        onPointerDown={e => onObjectPointerDown(e, obj)}
         {...hoverProps}
       >
         <svg width={obj.width} height={obj.height} style={shapeSvgStyle}>
@@ -371,22 +507,23 @@ export function SceneObjectView({
         ? Array.from({ length: Math.max(3, obj.sides) }, (_, i) => {
             const a = -Math.PI / 2 + (i / Math.max(3, obj.sides)) * Math.PI * 2
             return [
-              obj.width / 2 + Math.cos(a) * obj.width / 2,
-              obj.height / 2 + Math.sin(a) * obj.height / 2,
+              obj.width / 2 + (Math.cos(a) * obj.width) / 2,
+              obj.height / 2 + (Math.sin(a) * obj.height) / 2,
             ]
           })
         : Array.from({ length: Math.max(4, obj.points) * 2 }, (_, i) => {
             const a = -Math.PI / 2 + (i / (Math.max(4, obj.points) * 2)) * Math.PI * 2
             const r = i % 2 === 0 ? 1 : 0.45
             return [
-              obj.width / 2 + Math.cos(a) * obj.width / 2 * r,
-              obj.height / 2 + Math.sin(a) * obj.height / 2 * r,
+              obj.width / 2 + ((Math.cos(a) * obj.width) / 2) * r,
+              obj.height / 2 + ((Math.sin(a) * obj.height) / 2) * r,
             ]
           })
     return (
       <div
         style={style}
-        onPointerDown={(e) => onObjectPointerDown(e, obj)}
+        data-avnac-scene-object
+        onPointerDown={e => onObjectPointerDown(e, obj)}
         {...hoverProps}
       >
         <svg width={obj.width} height={obj.height} style={shapeSvgStyle}>
@@ -410,7 +547,8 @@ export function SceneObjectView({
     return (
       <div
         style={style}
-        onPointerDown={(e) => onObjectPointerDown(e, obj)}
+        data-avnac-scene-object
+        onPointerDown={e => onObjectPointerDown(e, obj)}
         {...hoverProps}
       >
         <svg width={obj.width} height={obj.height} style={shapeSvgStyle}>
@@ -453,7 +591,8 @@ export function SceneObjectView({
   return (
     <div
       style={style}
-      onPointerDown={(e) => onObjectPointerDown(e, obj)}
+      data-avnac-scene-object
+      onPointerDown={e => onObjectPointerDown(e, obj)}
       {...hoverProps}
     >
       <svg width={arrow.width} height={arrow.height} style={shapeSvgStyle}>

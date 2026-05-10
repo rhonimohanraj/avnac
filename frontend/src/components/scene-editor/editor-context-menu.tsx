@@ -1,12 +1,14 @@
-import { HugeiconsIcon } from '@hugeicons/react'
 import {
   Copy01Icon,
   Delete02Icon,
   FilePasteIcon,
+  LayerAddIcon,
   Layers02Icon,
   SquareLock01Icon,
   SquareUnlock01Icon,
 } from '@hugeicons/core-free-icons'
+
+import { Divider, MenuItem, MenuList, PopoverSurface } from '../ui'
 
 export type EditorContextMenuState = {
   x: number
@@ -14,114 +16,138 @@ export type EditorContextMenuState = {
   sceneX: number
   sceneY: number
   hasSelection: boolean
+  pageId: string | null
+  showPageActions: boolean
   locked: boolean
 }
 
-const contextMenuButtonClass =
-  'flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] font-medium text-neutral-800 outline-none hover:bg-black/[0.05] focus:bg-black/[0.05]'
-
 export function EditorContextMenu({
+  onAddPage,
+  canDeletePage,
   contextMenu,
   onClose,
   onCopy,
   onDelete,
+  onDeletePage,
   onDuplicate,
+  onDuplicatePage,
   onPaste,
   onToggleLock,
 }: {
+  onAddPage: (afterPageId?: string) => void
+  canDeletePage: boolean
   contextMenu: EditorContextMenuState | null
   onClose: () => void
   onCopy: () => void
   onDelete: () => void
+  onDeletePage: (pageId?: string) => void
   onDuplicate: () => void
+  onDuplicatePage: (sourcePageId?: string) => void
   onPaste: (point: { x: number; y: number }) => void
   onToggleLock: () => void
 }) {
   if (!contextMenu) return null
   return (
-    <div
+    <PopoverSurface
       role="menu"
-      className="fixed z-[90] min-w-48 overflow-hidden rounded-xl border border-black/[0.08] bg-white py-1 shadow-[0_18px_48px_rgba(0,0,0,0.16)] backdrop-blur"
+      width="w-auto"
+      className="fixed z-[90] min-w-48 rounded-xl py-1 backdrop-blur"
       style={{
         left: `min(${contextMenu.x}px, calc(100vw - 12.5rem))`,
         top: `min(${contextMenu.y}px, calc(100vh - 18rem))`,
       }}
       data-avnac-chrome
     >
-      {contextMenu.hasSelection ? (
-        <>
-          <button
-            type="button"
-            role="menuitem"
-            className={contextMenuButtonClass}
-            onClick={() => {
-              onCopy()
-              onClose()
-            }}
-          >
-            <HugeiconsIcon icon={Copy01Icon} size={18} strokeWidth={1.75} />
-            Copy
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            className={contextMenuButtonClass}
-            onClick={() => {
-              onDuplicate()
-              onClose()
-            }}
-          >
-            <HugeiconsIcon icon={Layers02Icon} size={18} strokeWidth={1.75} />
-            Duplicate
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            className={contextMenuButtonClass}
-            onClick={() => {
-              onToggleLock()
-              onClose()
-            }}
-          >
-            <HugeiconsIcon
-              icon={contextMenu.locked ? SquareUnlock01Icon : SquareLock01Icon}
-              size={18}
-              strokeWidth={1.75}
+      <MenuList className="p-0">
+        {contextMenu.hasSelection ? (
+          <>
+            <MenuItem
+              role="menuitem"
+              icon={Copy01Icon}
+              label="Copy"
+              onClick={() => {
+                onCopy()
+                onClose()
+              }}
             />
-            {contextMenu.locked ? 'Unlock' : 'Lock'}
-          </button>
-          <div className="my-1 h-px bg-black/[0.06]" aria-hidden />
-        </>
-      ) : null}
-      <button
-        type="button"
-        role="menuitem"
-        className={contextMenuButtonClass}
-        onClick={() => {
-          onPaste({ x: contextMenu.sceneX, y: contextMenu.sceneY })
-          onClose()
-        }}
-      >
-        <HugeiconsIcon icon={FilePasteIcon} size={18} strokeWidth={1.75} />
-        Paste
-      </button>
-      {contextMenu.hasSelection ? (
-        <>
-          <div className="my-1 h-px bg-black/[0.06]" aria-hidden />
-          <button
-            type="button"
-            role="menuitem"
-            className={contextMenuButtonClass}
-            onClick={() => {
-              onDelete()
-              onClose()
-            }}
-          >
-            <HugeiconsIcon icon={Delete02Icon} size={18} strokeWidth={1.75} />
-            Delete
-          </button>
-        </>
-      ) : null}
-    </div>
+            <MenuItem
+              role="menuitem"
+              icon={Layers02Icon}
+              label="Duplicate"
+              onClick={() => {
+                onDuplicate()
+                onClose()
+              }}
+            />
+            <MenuItem
+              role="menuitem"
+              icon={contextMenu.locked ? SquareUnlock01Icon : SquareLock01Icon}
+              label={contextMenu.locked ? 'Unlock' : 'Lock'}
+              onClick={() => {
+                onToggleLock()
+                onClose()
+              }}
+            />
+            <Divider />
+          </>
+        ) : null}
+        <MenuItem
+          role="menuitem"
+          icon={FilePasteIcon}
+          label="Paste"
+          onClick={() => {
+            onPaste({ x: contextMenu.sceneX, y: contextMenu.sceneY })
+            onClose()
+          }}
+        />
+        {contextMenu.showPageActions ? (
+          <>
+            <MenuItem
+              role="menuitem"
+              icon={Copy01Icon}
+              label="Duplicate page"
+              onClick={() => {
+                onDuplicatePage(contextMenu.pageId ?? undefined)
+                onClose()
+              }}
+            />
+            <MenuItem
+              role="menuitem"
+              icon={LayerAddIcon}
+              label="Add new page"
+              onClick={() => {
+                onAddPage(contextMenu.pageId ?? undefined)
+                onClose()
+              }}
+            />
+            {canDeletePage ? (
+              <MenuItem
+                role="menuitem"
+                icon={Delete02Icon}
+                label="Delete page"
+                onClick={() => {
+                  onDeletePage(contextMenu.pageId ?? undefined)
+                  onClose()
+                }}
+              />
+            ) : null}
+          </>
+        ) : null}
+        {contextMenu.hasSelection ? (
+          <>
+            <Divider />
+            <MenuItem
+              role="menuitem"
+              icon={Delete02Icon}
+              label="Delete"
+              onClick={() => {
+                onDelete()
+                onClose()
+              }}
+            />
+          </>
+        ) : null}
+      </MenuList>
+    </PopoverSurface>
   )
 }

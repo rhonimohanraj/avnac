@@ -24,6 +24,7 @@ function makeImage(overrides: Partial<SceneImage> = {}): SceneImage {
       y: 0,
       width: 800,
       height: 600,
+      rotation: 0,
     },
     cornerRadius: 0,
     ...overrides,
@@ -31,10 +32,7 @@ function makeImage(overrides: Partial<SceneImage> = {}): SceneImage {
 }
 
 function expectImageScaleToMatch(image: SceneImage) {
-  expect(image.width / image.crop.width).toBeCloseTo(
-    image.height / image.crop.height,
-    5,
-  )
+  expect(image.width / image.crop.width).toBeCloseTo(image.height / image.crop.height, 5)
 }
 
 describe('resizeObjectWithBox image transforms', () => {
