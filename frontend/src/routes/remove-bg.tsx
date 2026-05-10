@@ -15,6 +15,7 @@ import { usePostHog } from 'posthog-js/react'
 import { type CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { cx } from '../components/ui'
 import { removeBackgroundFromFile } from '../lib/avnac-background-removal'
+import { REMOVE_BG_FEATURE_ENABLED, REMOVE_BG_UNAVAILABLE_MESSAGE } from '../lib/feature-flags'
 import {
   deleteRemoveBgHistoryItem,
   listRemoveBgHistory,
@@ -28,7 +29,7 @@ import {
 } from '../scene-engine/primitives/files'
 
 export const Route = createFileRoute('/remove-bg')({
-  component: RemoveBgPage,
+  component: REMOVE_BG_FEATURE_ENABLED ? RemoveBgPage : RemoveBgUnavailablePage,
 })
 
 type RemoveBgStatus = 'empty' | 'processing' | 'done' | 'error'
@@ -517,6 +518,42 @@ function RemoveBgPage() {
           onSponsor={openSponsorPage}
         />
       ) : null}
+    </main>
+  )
+}
+
+function RemoveBgUnavailablePage() {
+  return (
+    <main className="min-h-[100dvh] bg-[#f7f7f5] text-[#424242]">
+      <RemoveBgHeader onSponsorClick={() => {}} />
+      <section className="mx-auto grid min-h-[100dvh] w-full max-w-[72rem] place-items-center px-6 py-24 sm:px-10">
+        <div className="w-full max-w-[42rem] text-center">
+          <div className="mx-auto grid size-16 place-items-center rounded-2xl border border-black/[0.08] bg-white text-[#db0061] shadow-[0_14px_36px_rgba(15,23,42,0.08)]">
+            <HugeiconsIcon icon={FavouriteIcon} size={30} strokeWidth={1.75} />
+          </div>
+          <h1 className="display-title mt-7 text-[clamp(3rem,12vw,5.8rem)] font-semibold leading-[0.94] text-[#363636]">
+            Background removal is paused
+          </h1>
+          <p className="mx-auto mt-6 max-w-[35rem] text-base font-medium leading-7 text-[#59616b] sm:text-lg">
+            {REMOVE_BG_UNAVAILABLE_MESSAGE}
+          </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              to="/sponsor"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-neutral-950 px-6 text-base font-bold text-white transition hover:bg-neutral-800"
+            >
+              <HugeiconsIcon icon={Coffee02Icon} size={19} strokeWidth={1.9} />
+              Sponsor Avnac
+            </Link>
+            <Link
+              to="/"
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-black/[0.1] bg-white px-6 text-base font-bold text-neutral-900 transition hover:bg-black/[0.04]"
+            >
+              Back home
+            </Link>
+          </div>
+        </div>
+      </section>
     </main>
   )
 }
