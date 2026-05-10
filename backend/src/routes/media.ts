@@ -14,6 +14,9 @@ const REMBG_RETRY_ATTEMPTS = 2
 const REMBG_READY_CHECK_INTERVAL_MS = 500
 const REMBG_READY_TIMEOUT_MS = 20_000
 const REMBG_HEALTH_TIMEOUT_MS = 2_000
+const REMOVE_BACKGROUND_ENDPOINT_ENABLED = false
+const REMOVE_BACKGROUND_UNAVAILABLE_MESSAGE =
+  'Background removal is temporarily unavailable because the server cost is too high for a free and open-source project.'
 
 type RemoveBackgroundOptions = {
   a?: boolean
@@ -611,6 +614,9 @@ export const mediaRoutes = new Elysia({ prefix: '/media' })
     },
   )
   .post('/remove-background', async ({ request }) => {
+    if (!REMOVE_BACKGROUND_ENDPOINT_ENABLED) {
+      throw new HttpError(503, REMOVE_BACKGROUND_UNAVAILABLE_MESSAGE)
+    }
     const input = await loadRemoveBackgroundInput(request)
     return removeBackground(input)
   })
