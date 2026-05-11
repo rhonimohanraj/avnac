@@ -7,6 +7,10 @@ import { HttpError } from '../lib/http'
 const PAYSTACK_API_BASE = 'https://api.paystack.co'
 const recurringPlanCache = new Map<string, Promise<string>>()
 const sponsorIntervals = ['weekly', 'monthly', 'quarterly', 'annually'] as const
+const sponsorCurrencyMinimums: Record<string, number> = {
+  NGN: 100,
+  USD: 1,
+}
 
 type SponsorMode = 'one-time' | 'recurring'
 type SponsorInterval = (typeof sponsorIntervals)[number]
@@ -81,7 +85,14 @@ async function paystackRequest<T>(path: string, init: RequestInit): Promise<T> {
 
   if (!response.ok || !payload?.status || payload.data == null) {
     const reason = payload?.message?.trim()
-    if (response.status === 401 || response.status === 403) {
+    console.error('Paystack request failed', {
+      path,
+      status: response.status,
+      statusText: response.statusText,
+      message: reason ?? null,
+      paystackStatus: payload?.status ?? null,
+    })
+    if (response.status === 401) {
       throw new HttpError(
         502,
         'Paystack rejected the server credentials. Check PAYSTACK_SECRET_KEY.',
@@ -237,11 +248,33 @@ function resolveModeFromPlan(plan: unknown): SponsorMode {
   return 'one-time'
 }
 
+function sponsorCurrencies(): string[] {
+  return Array.from(new Set([env.PAYSTACK_CURRENCY, ...env.PAYSTACK_ALLOWED_CURRENCIES]))
+}
+
+function normalizeSponsorCurrency(value: string | null | undefined): string {
+  const fallbackCurrency = env.PAYSTACK_CURRENCY
+  const currency = value?.trim().toUpperCase() || fallbackCurrency
+  if (!sponsorCurrencies().includes(currency)) {
+    throw new HttpError(400, `Unsupported sponsor currency: ${currency}.`)
+  }
+  return currency
+}
+
+function sponsorMinimumAmount(currency: string): number {
+  return sponsorCurrencyMinimums[currency] ?? 1
+}
+
 export const sponsorRoutes = new Elysia({ prefix: '/sponsor' })
   .get('/config', () => ({
     data: {
       enabled: Boolean(env.PAYSTACK_SECRET_KEY),
       currency: env.PAYSTACK_CURRENCY,
+      defaultCurrency: env.PAYSTACK_CURRENCY,
+      supportedCurrencies: sponsorCurrencies(),
+      minimumAmounts: Object.fromEntries(
+        sponsorCurrencies().map(currency => [currency, sponsorMinimumAmount(currency)]),
+      ),
       recurringIntervals: sponsorIntervals,
     },
   }))
@@ -251,12 +284,16 @@ export const sponsorRoutes = new Elysia({ prefix: '/sponsor' })
       const email = body.email.trim().toLowerCase()
       const amountMajor = Math.round(body.amount)
       const callbackUrl = parseCallbackUrl(body.returnUrl)
-      const currency = env.PAYSTACK_CURRENCY
+      const currency = normalizeSponsorCurrency(body.currency)
       const amountMinor = toMinorUnits(amountMajor)
       const recurringInterval = asSponsorInterval(body.interval)
+      const minimumAmount = sponsorMinimumAmount(currency)
 
       if (body.mode === 'recurring' && !recurringInterval) {
         throw new HttpError(400, 'Recurring tips require a billing interval.')
+      }
+      if (amountMajor < minimumAmount) {
+        throw new HttpError(400, `Enter an amount of at least ${minimumAmount} ${currency}.`)
       }
 
       const metadata: SponsorMetadata = {
@@ -308,7 +345,8 @@ export const sponsorRoutes = new Elysia({ prefix: '/sponsor' })
       body: t.Object({
         mode: t.Union([t.Literal('one-time'), t.Literal('recurring')]),
         email: t.String({ format: 'email' }),
-        amount: t.Integer({ minimum: 100 }),
+        amount: t.Integer({ minimum: 1 }),
+        currency: t.Optional(t.String({ minLength: 3, maxLength: 3 })),
         interval: t.Optional(
           t.Union(
             sponsorIntervals.map(interval => t.Literal(interval)) as unknown as [
