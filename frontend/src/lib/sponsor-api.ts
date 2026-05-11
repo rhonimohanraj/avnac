@@ -6,6 +6,7 @@ export type SponsorInterval = 'weekly' | 'monthly' | 'quarterly' | 'annually'
 export type SponsorConfig = {
   enabled: boolean
   currency: string
+  minimumAmounts?: Record<string, number>
   recurringIntervals: SponsorInterval[]
 }
 
@@ -13,6 +14,7 @@ export type SponsorCheckoutPayload = {
   mode: SponsorMode
   email: string
   amount: number
+  currency: string
   interval?: SponsorInterval
   returnUrl: string
 }
