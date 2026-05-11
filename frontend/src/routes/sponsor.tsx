@@ -153,10 +153,12 @@ function SponsorPage() {
   }, [reference])
 
   const currency = config?.currency ?? 'NGN'
+  const minimumAmount = config?.minimumAmounts?.[currency] ?? 100
   const recurringIntervals = config?.recurringIntervals ?? fallbackIntervals
   const checkoutPending = checkoutState.mode !== null
   const modalAmount = activeModal === 'recurring' ? recurringAmount : oneTimeAmount
   const statusModalOpen = verification.kind !== 'idle'
+  const minimumAmountLabel = formatMoney(minimumAmount, currency)
 
   function closeStatusModal() {
     setVerification({ kind: 'idle' })
@@ -184,10 +186,10 @@ function SponsorPage() {
   function openCheckoutModal(mode: SponsorMode) {
     const amount = normalizeAmount(mode === 'one-time' ? oneTimeAmount : recurringAmount)
 
-    if (amount < 100) {
+    if (amount < minimumAmount) {
       setCheckoutState({
         mode: null,
-        error: 'Enter an amount of at least 100 before continuing.',
+        error: `Enter an amount of at least ${minimumAmountLabel} before continuing.`,
       })
       return
     }
@@ -219,10 +221,10 @@ function SponsorPage() {
       })
       return
     }
-    if (amount < 100) {
+    if (amount < minimumAmount) {
       setCheckoutState({
         mode: null,
-        error: 'Enter an amount of at least 100.',
+        error: `Enter an amount of at least ${minimumAmountLabel}.`,
       })
       return
     }
@@ -234,6 +236,7 @@ function SponsorPage() {
         mode: input.mode,
         email,
         amount,
+        currency,
         interval: input.interval,
         returnUrl: `${window.location.origin}/sponsor`,
       })
@@ -408,19 +411,19 @@ function SponsorPage() {
         </section>
 
         <section className="mx-auto w-full max-w-3xl pb-6">
-          <div className="rounded-[2rem] border border-[#e7dfd2] bg-white px-6 py-6 text-center shadow-[0_12px_30px_rgba(15,23,42,0.05)] sm:px-8">
+          <div className="rounded-[2rem] border border-[#d7dce5] bg-white px-6 py-6 text-center shadow-[0_12px_30px_rgba(15,23,42,0.05)] sm:px-8">
             <div className="landing-kicker">More Ways To Support</div>
             <h2 className="display-title mt-4 text-3xl tracking-[-0.03em] text-slate-950">
               Not in Nigeria?
             </h2>
             <div className="mt-6 flex justify-center">
               <a
-                href="https://buymeacoffee.com/akinkunmi"
+                href="https://github.com/sponsors/akinloluwami"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-w-[16rem] items-center justify-center rounded-full border border-[#e0b200] bg-[#ffdd00] px-6 py-3 text-sm font-semibold text-[#3b2f00] shadow-[0_10px_22px_rgba(255,221,0,0.22)] transition hover:-translate-y-0.5 hover:border-[#caa000] hover:bg-[#ffd000] hover:shadow-[0_14px_28px_rgba(255,221,0,0.28)]"
+                className="inline-flex min-w-[16rem] items-center justify-center rounded-full border border-slate-800 bg-slate-950 px-6 py-3 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_14px_28px_rgba(15,23,42,0.22)]"
               >
-                Support on Buy Me a Coffee
+                Sponsor on GitHub
               </a>
             </div>
           </div>
@@ -457,7 +460,7 @@ function SponsorPage() {
             </div>
 
             <div className="mt-6 text-[clamp(2.5rem,6vw,3.4rem)] leading-none tracking-[-0.05em] text-slate-950">
-              {formatMoney(Math.max(100, normalizeAmount(modalAmount) || 0), currency)}
+              {formatMoney(Math.max(minimumAmount, normalizeAmount(modalAmount) || 0), currency)}
             </div>
             <div className="mt-1 text-sm text-slate-500">
               {activeModal === 'one-time'
