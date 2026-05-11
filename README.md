@@ -197,3 +197,7 @@ Right now they cover core areas such as:
 - If you change media proxy behavior, restart the backend before testing export flows that depend on remote images
 - If you are debugging editor behavior, the frontend is the main source of truth
 - If you are debugging old-file compatibility, start with `frontend/src/lib/avnac-scene.ts` and the files/create routes
+
+## License
+
+This project is licensed under the GNU Affero General Public License v3.0 only. See [LICENSE](LICENSE).
