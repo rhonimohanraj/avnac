@@ -29,7 +29,10 @@ export const auth = betterAuth({
   advanced: isHttps
     ? {
         crossSubDomainCookies: { enabled: true },
-        defaultCookieAttributes: { sameSite: 'lax', secure: true },
+        // sameSite must be 'none' for the cookie to be sent on cross-origin XHRs
+        // from avnac.tridenteventgroup.ca to avnac-api.tridenteventgroup.ca.
+        // 'lax' would only attach the cookie on top-level navigation.
+        defaultCookieAttributes: { sameSite: 'none', secure: true, partitioned: false },
       }
     : undefined,
   databaseHooks: {

@@ -215,8 +215,22 @@ function LibraryPage() {
         <div className="max-w-md rounded-2xl bg-white p-8 shadow-xl">
           <h1 className="mb-2 text-xl font-semibold">Sign in required</h1>
           <p className="text-sm text-gray-600">
-            The Library is only available to signed-in TEG team members. Please sign in.
+            The Library is only available to signed-in TEG team members.
           </p>
+          <div className="mt-5 flex gap-2">
+            <a
+              href="/sign-in?next=/library"
+              className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+            >
+              Sign in
+            </a>
+            <a
+              href="/sign-in?mode=sign-up&next=/library"
+              className="rounded-lg bg-white px-4 py-2 text-sm font-medium ring-1 ring-gray-300 hover:bg-gray-50"
+            >
+              Create account
+            </a>
+          </div>
         </div>
       </main>
     )

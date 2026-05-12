@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as StudioRouteImport } from './routes/studio'
 import { Route as SponsorRouteImport } from './routes/sponsor'
+import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as RemoveBgRouteImport } from './routes/remove-bg'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as FilesRouteImport } from './routes/files'
@@ -27,6 +28,11 @@ const StudioRoute = StudioRouteImport.update({
 const SponsorRoute = SponsorRouteImport.update({
   id: '/sponsor',
   path: '/sponsor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RemoveBgRoute = RemoveBgRouteImport.update({
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/files': typeof FilesRoute
   '/library': typeof LibraryRoute
   '/remove-bg': typeof RemoveBgRoute
+  '/sign-in': typeof SignInRoute
   '/sponsor': typeof SponsorRoute
   '/studio': typeof StudioRoute
 }
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/files': typeof FilesRoute
   '/library': typeof LibraryRoute
   '/remove-bg': typeof RemoveBgRoute
+  '/sign-in': typeof SignInRoute
   '/sponsor': typeof SponsorRoute
   '/studio': typeof StudioRoute
 }
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/files': typeof FilesRoute
   '/library': typeof LibraryRoute
   '/remove-bg': typeof RemoveBgRoute
+  '/sign-in': typeof SignInRoute
   '/sponsor': typeof SponsorRoute
   '/studio': typeof StudioRoute
 }
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/files'
     | '/library'
     | '/remove-bg'
+    | '/sign-in'
     | '/sponsor'
     | '/studio'
   fileRoutesByTo: FileRoutesByTo
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/files'
     | '/library'
     | '/remove-bg'
+    | '/sign-in'
     | '/sponsor'
     | '/studio'
   id:
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/files'
     | '/library'
     | '/remove-bg'
+    | '/sign-in'
     | '/sponsor'
     | '/studio'
   fileRoutesById: FileRoutesById
@@ -143,6 +155,7 @@ export interface RootRouteChildren {
   FilesRoute: typeof FilesRoute
   LibraryRoute: typeof LibraryRoute
   RemoveBgRoute: typeof RemoveBgRoute
+  SignInRoute: typeof SignInRoute
   SponsorRoute: typeof SponsorRoute
   StudioRoute: typeof StudioRoute
 }
@@ -161,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/sponsor'
       fullPath: '/sponsor'
       preLoaderRoute: typeof SponsorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/remove-bg': {
@@ -223,6 +243,7 @@ const rootRouteChildren: RootRouteChildren = {
   FilesRoute: FilesRoute,
   LibraryRoute: LibraryRoute,
   RemoveBgRoute: RemoveBgRoute,
+  SignInRoute: SignInRoute,
   SponsorRoute: SponsorRoute,
   StudioRoute: StudioRoute,
 }

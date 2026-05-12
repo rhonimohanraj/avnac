@@ -119,6 +119,78 @@ async function jsonRequest<T>(
   return data as T
 }
 
+// ---------- Auth ----------
+
+export type SessionUser = {
+  id: string
+  email: string
+  name: string
+  emailVerified: boolean
+  image: string | null
+}
+
+export type SessionPayload = {
+  user: SessionUser
+  session: { id: string; expiresAt: string }
+}
+
+export async function fetchSession(): Promise<SessionPayload | null> {
+  // Backend mounts /session at root level. Returns { data: SessionPayload | null }.
+  const response = await fetch(api('/session'), { credentials: 'include' })
+  if (!response.ok) return null
+  try {
+    const json = (await response.json()) as { data: SessionPayload | null }
+    return json.data ?? null
+  } catch {
+    return null
+  }
+}
+
+export async function signInWithEmail(email: string, password: string): Promise<SessionUser> {
+  const response = await fetch(api('/auth/sign-in/email'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ email, password }),
+  })
+  const json = (await response.json().catch(() => ({}))) as {
+    user?: SessionUser
+    message?: string
+  }
+  if (!response.ok || !json.user) {
+    throw new Error(json.message || 'Sign in failed')
+  }
+  return json.user
+}
+
+export async function signUpWithEmail(input: {
+  name: string
+  email: string
+  password: string
+}): Promise<SessionUser> {
+  const response = await fetch(api('/auth/sign-up/email'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(input),
+  })
+  const json = (await response.json().catch(() => ({}))) as {
+    user?: SessionUser
+    message?: string
+  }
+  if (!response.ok || !json.user) {
+    throw new Error(json.message || 'Sign up failed')
+  }
+  return json.user
+}
+
+export async function signOut(): Promise<void> {
+  await fetch(api('/auth/sign-out'), {
+    method: 'POST',
+    credentials: 'include',
+  })
+}
+
 // ---------- Folders ----------
 
 export async function listFolders(): Promise<Folder[]> {
