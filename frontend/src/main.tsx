@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 
 import { getRouter } from './router'
 import './styles.css'
+import './styles/teg-custom-fonts.css'
 
 const router = getRouter()
 
