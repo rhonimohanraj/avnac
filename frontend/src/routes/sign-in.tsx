@@ -111,6 +111,17 @@ function SignInPage() {
             />
           </label>
 
+          {mode === 'sign-in' ? (
+            <p className="text-right text-xs">
+              <Link
+                to="/forgot-password"
+                className="text-neutral-600 hover:text-neutral-900 hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </p>
+          ) : null}
+
           {error ? (
             <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">{error}</p>
           ) : null}

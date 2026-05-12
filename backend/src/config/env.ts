@@ -28,6 +28,14 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('http://localhost:3300'),
   ALLOWED_EMAIL_DOMAINS: optionalNonEmptyString,
   UPLOADS_DIR: optionalNonEmptyString,
+  // SMTP — used for password-reset emails. If unset, password reset is disabled.
+  SMTP_HOST: optionalNonEmptyString,
+  SMTP_PORT: z.coerce.number().int().positive().optional(),
+  SMTP_USER: optionalNonEmptyString,
+  SMTP_PASSWORD: optionalNonEmptyString,
+  SMTP_FROM: optionalNonEmptyString,
+  // Public URL of the frontend, used to build password-reset links inside emails.
+  FRONTEND_URL: optionalNonEmptyString,
   UNSPLASH_ACCESS_KEY: optionalNonEmptyString,
   PAYSTACK_SECRET_KEY: optionalNonEmptyString,
   PAYSTACK_CURRENCY: z

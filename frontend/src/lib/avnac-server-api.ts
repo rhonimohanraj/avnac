@@ -191,6 +191,35 @@ export async function signOut(): Promise<void> {
   })
 }
 
+export async function requestPasswordReset(email: string, redirectTo: string): Promise<void> {
+  // BetterAuth: POST /auth/forget-password with email + redirectTo. The redirectTo
+  // is what we want the email link to point at (our /reset-password page on the
+  // frontend). BetterAuth signs a token tied to that URL.
+  const response = await fetch(api('/auth/forget-password'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ email, redirectTo }),
+  })
+  if (!response.ok) {
+    const json = (await response.json().catch(() => ({}))) as { message?: string }
+    throw new Error(json.message || 'Could not send reset email')
+  }
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  const response = await fetch(api('/auth/reset-password'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ token, newPassword }),
+  })
+  if (!response.ok) {
+    const json = (await response.json().catch(() => ({}))) as { message?: string }
+    throw new Error(json.message || 'Password reset failed')
+  }
+}
+
 // ---------- Folders ----------
 
 export async function listFolders(): Promise<Folder[]> {

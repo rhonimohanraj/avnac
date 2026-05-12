@@ -3,6 +3,7 @@ import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { env } from './config/env'
 import { db } from './db'
+import { isMailerConfigured, sendMail } from './lib/mailer'
 
 const ALLOWED_EMAIL_DOMAINS = (env.ALLOWED_EMAIL_DOMAINS ?? '')
   .split(',')
@@ -30,6 +31,27 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    sendResetPassword: isMailerConfigured()
+      ? async ({ user, url }: { user: { email: string; name?: string }; url: string }) => {
+          // BetterAuth's `url` points at the API; rewrite it to the public frontend
+          // /reset-password page so the browser-side flow handles the token exchange.
+          const frontend = env.FRONTEND_URL ?? env.CORS_ORIGIN.split(',')[0]?.trim() ?? ''
+          let resetLink = url
+          try {
+            const u = new URL(url)
+            const token = u.searchParams.get('token') ?? ''
+            resetLink = `${frontend.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(token)}`
+          } catch {
+            // fall back to raw URL on parse failure
+          }
+          await sendMail({
+            to: user.email,
+            subject: 'Reset your Avnac password',
+            text: `Hi ${user.name ?? 'there'},\n\nClick the link below to reset your Avnac password. It expires in 1 hour.\n\n${resetLink}\n\nIf you didn't request this, you can ignore this email.\n\n— Avnac`,
+            html: `<p>Hi ${user.name ?? 'there'},</p><p>Click the link below to reset your Avnac password. It expires in 1 hour.</p><p><a href="${resetLink}">Reset password</a></p><p>If you didn't request this, you can ignore this email.</p><p>— Avnac</p>`,
+          })
+        }
+      : undefined,
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7,

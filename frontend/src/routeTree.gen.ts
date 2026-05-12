@@ -12,8 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as StudioRouteImport } from './routes/studio'
 import { Route as SponsorRouteImport } from './routes/sponsor'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RemoveBgRouteImport } from './routes/remove-bg'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FilesRouteImport } from './routes/files'
 import { Route as EditorRouteImport } from './routes/editor'
 import { Route as CreateRouteImport } from './routes/create'
@@ -35,6 +37,11 @@ const SignInRoute = SignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RemoveBgRoute = RemoveBgRouteImport.update({
   id: '/remove-bg',
   path: '/remove-bg',
@@ -43,6 +50,11 @@ const RemoveBgRoute = RemoveBgRouteImport.update({
 const LibraryRoute = LibraryRouteImport.update({
   id: '/library',
   path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FilesRoute = FilesRouteImport.update({
@@ -77,8 +89,10 @@ export interface FileRoutesByFullPath {
   '/create': typeof CreateRoute
   '/editor': typeof EditorRoute
   '/files': typeof FilesRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/library': typeof LibraryRoute
   '/remove-bg': typeof RemoveBgRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sponsor': typeof SponsorRoute
   '/studio': typeof StudioRoute
@@ -89,8 +103,10 @@ export interface FileRoutesByTo {
   '/create': typeof CreateRoute
   '/editor': typeof EditorRoute
   '/files': typeof FilesRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/library': typeof LibraryRoute
   '/remove-bg': typeof RemoveBgRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sponsor': typeof SponsorRoute
   '/studio': typeof StudioRoute
@@ -102,8 +118,10 @@ export interface FileRoutesById {
   '/create': typeof CreateRoute
   '/editor': typeof EditorRoute
   '/files': typeof FilesRoute
+  '/forgot-password': typeof ForgotPasswordRoute
   '/library': typeof LibraryRoute
   '/remove-bg': typeof RemoveBgRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sponsor': typeof SponsorRoute
   '/studio': typeof StudioRoute
@@ -116,8 +134,10 @@ export interface FileRouteTypes {
     | '/create'
     | '/editor'
     | '/files'
+    | '/forgot-password'
     | '/library'
     | '/remove-bg'
+    | '/reset-password'
     | '/sign-in'
     | '/sponsor'
     | '/studio'
@@ -128,8 +148,10 @@ export interface FileRouteTypes {
     | '/create'
     | '/editor'
     | '/files'
+    | '/forgot-password'
     | '/library'
     | '/remove-bg'
+    | '/reset-password'
     | '/sign-in'
     | '/sponsor'
     | '/studio'
@@ -140,8 +162,10 @@ export interface FileRouteTypes {
     | '/create'
     | '/editor'
     | '/files'
+    | '/forgot-password'
     | '/library'
     | '/remove-bg'
+    | '/reset-password'
     | '/sign-in'
     | '/sponsor'
     | '/studio'
@@ -153,8 +177,10 @@ export interface RootRouteChildren {
   CreateRoute: typeof CreateRoute
   EditorRoute: typeof EditorRoute
   FilesRoute: typeof FilesRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
   LibraryRoute: typeof LibraryRoute
   RemoveBgRoute: typeof RemoveBgRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SignInRoute: typeof SignInRoute
   SponsorRoute: typeof SponsorRoute
   StudioRoute: typeof StudioRoute
@@ -183,6 +209,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/remove-bg': {
       id: '/remove-bg'
       path: '/remove-bg'
@@ -195,6 +228,13 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library'
       preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/files': {
@@ -241,8 +281,10 @@ const rootRouteChildren: RootRouteChildren = {
   CreateRoute: CreateRoute,
   EditorRoute: EditorRoute,
   FilesRoute: FilesRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
   LibraryRoute: LibraryRoute,
   RemoveBgRoute: RemoveBgRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SignInRoute: SignInRoute,
   SponsorRoute: SponsorRoute,
   StudioRoute: StudioRoute,
