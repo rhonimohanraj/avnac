@@ -1,6 +1,9 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import BrandKitEditor from '../components/brand-kit-editor'
+import LibraryContextMenu, {
+  type ContextMenuItem,
+} from '../components/library-context-menu'
 import {
   type BrandKit,
   createBrandKit,
@@ -12,10 +15,16 @@ import {
   listBrandKits,
   listFolders,
   listServerDocuments,
+  patchServerDocument,
   type ServerDocumentListItem,
   updateFolder,
 } from '../lib/avnac-server-api'
 import { buildFolderTree, type FolderNode } from '../lib/avnac-library-tree'
+
+type OpenMenu =
+  | { kind: 'doc'; x: number; y: number; doc: ServerDocumentListItem }
+  | { kind: 'folder'; x: number; y: number; folder: Folder }
+  | null
 
 export const Route = createFileRoute('/library')({
   component: LibraryPage,
@@ -32,6 +41,7 @@ function LibraryPage() {
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
   const [editingBrandKitId, setEditingBrandKitId] = useState<string | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [menu, setMenu] = useState<OpenMenu>(null)
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -192,6 +202,76 @@ function LibraryPage() {
     } catch (err) {
       window.alert(err instanceof Error ? err.message : 'Delete failed')
     }
+  }
+
+  const handleRenameDesign = async (doc: ServerDocumentListItem) => {
+    const next = window.prompt('Rename design', doc.title ?? 'Untitled')
+    if (next === null) return
+    const trimmed = next.trim() || 'Untitled'
+    if (trimmed === (doc.title ?? 'Untitled')) return
+    try {
+      await patchServerDocument(doc.id, { title: trimmed })
+      await refresh()
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Rename failed')
+    }
+  }
+
+  const handleMoveDesign = async (doc: ServerDocumentListItem) => {
+    const choices = ['root', ...folders.map(f => f.name)]
+    const choice = window.prompt(
+      `Move to which folder? Type "root" for top level.\n\nAvailable: ${choices.join(', ')}`,
+      'root',
+    )
+    if (!choice) return
+    const trimmed = choice.trim().toLowerCase()
+    let folderId: string | null = null
+    if (trimmed !== 'root' && trimmed !== '') {
+      const match = folders.find(f => f.name.toLowerCase() === trimmed)
+      if (!match) {
+        window.alert(`No folder named "${choice}".`)
+        return
+      }
+      folderId = match.id
+    }
+    try {
+      await patchServerDocument(doc.id, { folderId })
+      await refresh()
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Move failed')
+    }
+  }
+
+  const designMenuItems = (doc: ServerDocumentListItem): ContextMenuItem[] => [
+    { label: 'Open', onClick: () => handleOpenDesign(doc) },
+    { label: 'Rename', onClick: () => void handleRenameDesign(doc) },
+    { label: 'Move to folder…', onClick: () => void handleMoveDesign(doc) },
+    { label: '', onClick: () => undefined, divider: true },
+    { label: 'Delete', onClick: () => void handleDeleteDesign(doc), danger: true },
+  ]
+
+  const folderMenuItems = (f: Folder): ContextMenuItem[] => [
+    { label: 'Open', onClick: () => setSelectedFolderId(f.id) },
+    { label: 'Rename', onClick: () => void handleRenameFolder(f) },
+    {
+      label: f.brandKitId ? 'Detach brand kit' : 'Attach brand kit…',
+      onClick: () =>
+        f.brandKitId ? void handleDetachKit(f) : void handleAttachKit(f),
+    },
+    { label: '', onClick: () => undefined, divider: true },
+    { label: 'Delete', onClick: () => void handleDeleteFolder(f), danger: true },
+  ]
+
+  const openDocMenu = (e: React.MouseEvent, doc: ServerDocumentListItem) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setMenu({ kind: 'doc', x: e.clientX, y: e.clientY, doc })
+  }
+
+  const openFolderMenu = (e: React.MouseEvent, f: Folder) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setMenu({ kind: 'folder', x: e.clientX, y: e.clientY, folder: f })
   }
 
   const handleDeleteKit = async (kit: BrandKit) => {
@@ -432,14 +512,19 @@ function LibraryPage() {
                     {childFolders.map(f => {
                       const kit = f.brandKitId ? kits.find(k => k.id === f.brandKitId) : null
                       return (
-                        <button
+                        <div
                           key={f.id}
-                          type="button"
-                          onClick={() => setSelectedFolderId(f.id)}
-                          className="flex aspect-[5/4] flex-col items-start justify-between rounded-xl bg-white p-3 text-left ring-1 ring-gray-200 hover:ring-gray-400"
+                          className="group relative flex aspect-[5/4] flex-col items-start justify-between rounded-xl bg-white p-3 text-left ring-1 ring-gray-200 hover:ring-gray-400"
+                          onContextMenu={e => openFolderMenu(e, f)}
                         >
-                          <span className="text-3xl">📁</span>
-                          <div className="w-full">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedFolderId(f.id)}
+                            className="absolute inset-0 cursor-pointer"
+                            aria-label={`Open ${f.name}`}
+                          />
+                          <span className="pointer-events-none relative text-3xl">📁</span>
+                          <div className="pointer-events-none relative w-full">
                             <p className="truncate text-sm font-medium">{f.name}</p>
                             {kit ? (
                               <p className="truncate text-xs text-indigo-600">
@@ -447,7 +532,16 @@ function LibraryPage() {
                               </p>
                             ) : null}
                           </div>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={e => openFolderMenu(e, f)}
+                            aria-label="More actions"
+                            className="absolute right-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-md text-gray-500 opacity-0 ring-1 ring-gray-200 transition hover:bg-white hover:text-gray-900 group-hover:opacity-100"
+                            title="More"
+                          >
+                            ⋯
+                          </button>
+                        </div>
                       )
                     })}
                   </div>
@@ -476,7 +570,8 @@ function LibraryPage() {
                     {folderDocs.map(doc => (
                       <div
                         key={doc.id}
-                        className="group flex aspect-[5/4] flex-col items-start justify-between rounded-xl bg-white p-3 text-left ring-1 ring-gray-200 hover:ring-gray-400"
+                        className="group relative flex aspect-[5/4] flex-col items-start justify-between rounded-xl bg-white p-3 text-left ring-1 ring-gray-200 hover:ring-gray-400"
+                        onContextMenu={e => openDocMenu(e, doc)}
                       >
                         <button
                           type="button"
@@ -496,11 +591,12 @@ function LibraryPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => void handleDeleteDesign(doc)}
-                          className="absolute right-2 top-2 hidden text-xs text-red-500 group-hover:block"
-                          title="Delete"
+                          onClick={e => openDocMenu(e, doc)}
+                          aria-label="More actions"
+                          className="absolute right-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-md bg-white text-gray-500 opacity-0 ring-1 ring-gray-200 transition hover:text-gray-900 group-hover:opacity-100"
+                          title="More"
                         >
-                          ×
+                          ⋯
                         </button>
                       </div>
                     ))}
@@ -519,6 +615,17 @@ function LibraryPage() {
             setEditingBrandKitId(null)
             void refresh()
           }}
+        />
+      ) : null}
+
+      {menu ? (
+        <LibraryContextMenu
+          x={menu.x}
+          y={menu.y}
+          items={
+            menu.kind === 'doc' ? designMenuItems(menu.doc) : folderMenuItems(menu.folder)
+          }
+          onClose={() => setMenu(null)}
         />
       ) : null}
     </main>
