@@ -9,6 +9,8 @@ const ALLOWED_EMAIL_DOMAINS = (env.ALLOWED_EMAIL_DOMAINS ?? '')
   .map((d) => d.trim().toLowerCase())
   .filter(Boolean)
 
+const isHttps = env.BETTER_AUTH_URL.startsWith('https://')
+
 export const auth = betterAuth({
   appName: 'Avnac',
   baseURL: env.BETTER_AUTH_URL,
@@ -24,6 +26,12 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 7,
     updateAge: 60 * 60 * 24,
   },
+  advanced: isHttps
+    ? {
+        crossSubDomainCookies: { enabled: true },
+        defaultCookieAttributes: { sameSite: 'lax', secure: true },
+      }
+    : undefined,
   databaseHooks: {
     user: {
       create: {
