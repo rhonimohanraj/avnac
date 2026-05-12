@@ -26,6 +26,7 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(1, 'BETTER_AUTH_SECRET is required'),
   BETTER_AUTH_URL: z.string().url().default('http://localhost:3001'),
   CORS_ORIGIN: z.string().default('http://localhost:3300'),
+  ALLOWED_EMAIL_DOMAINS: optionalNonEmptyString,
   UNSPLASH_ACCESS_KEY: optionalNonEmptyString,
   PAYSTACK_SECRET_KEY: optionalNonEmptyString,
   PAYSTACK_CURRENCY: z
