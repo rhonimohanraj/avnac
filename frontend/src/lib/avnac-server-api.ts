@@ -221,6 +221,18 @@ export async function deleteBrandKitAsset(kitId: string, assetId: string): Promi
 
 // ---------- Uploads ----------
 
+export type TeamUploadListItem = {
+  url: string
+  filename: string
+  mimeType: string
+  sizeBytes: number
+  modifiedAt: string
+}
+
+export async function listTeamUploads(): Promise<TeamUploadListItem[]> {
+  return jsonRequest<TeamUploadListItem[]>('/uploads', 'GET')
+}
+
 export async function uploadAsset(file: Blob, filename?: string): Promise<UploadResult> {
   const form = new FormData()
   form.append('file', file, filename)

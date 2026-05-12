@@ -148,14 +148,14 @@ function CreatePage() {
             </Text>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link
-                to="/files"
+                to="/library"
                 className={buttonClassName({
                   variant: 'primary',
                   size: 'lg',
                   className: 'rounded-full border-0 px-8',
                 })}
               >
-                Go to files
+                Go to library
               </Link>
               <Link
                 to="/"
@@ -182,14 +182,14 @@ function CreatePage() {
     <div className="flex h-[100dvh] min-h-0 flex-col bg-[var(--surface-subtle)]">
       <header className="flex flex-shrink-0 items-center gap-3 border-b border-[var(--line)] bg-[var(--surface)] px-4 py-3 sm:px-5 sm:py-3.5">
         <Link
-          to="/files"
+          to="/library"
           className={iconButtonClassName({
             size: 'lg',
             variant: 'ghost',
             className: 'rounded-full text-[var(--text-muted)] no-underline',
           })}
-          aria-label="All files"
-          title="All files"
+          aria-label="Library"
+          title="Library"
         >
           <HugeiconsIcon icon={Home05Icon} size={18} strokeWidth={1.65} className="shrink-0" />
         </Link>
@@ -257,7 +257,7 @@ function CreatePage() {
             file_ids: [id],
             open_after_conversion: false,
           })
-          void navigate({ to: '/files' })
+          void navigate({ to: '/library' })
         }}
         onConfirm={() => {
           if (migrationBusy) return

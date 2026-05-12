@@ -1,5 +1,5 @@
 import { createReadStream } from 'node:fs'
-import { mkdir, stat, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, stat, writeFile } from 'node:fs/promises'
 import { extname, join, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { Elysia } from 'elysia'
@@ -35,7 +35,51 @@ async function ensureUploadsDir() {
   await mkdir(UPLOADS_DIR, { recursive: true })
 }
 
+const EXT_TO_MIME: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+}
+
 export const uploadsRoutes = new Elysia()
+  .get('/uploads', async ({ request, set }) => {
+    // Team-shared inventory of every uploaded image (logos, graphics, editor
+    // drops). Returns newest-first. Anyone signed in sees everything.
+    await requireAuth(request.headers)
+    await ensureUploadsDir()
+    const entries = await readdir(UPLOADS_DIR)
+    const items: Array<{
+      url: string
+      filename: string
+      mimeType: string
+      sizeBytes: number
+      modifiedAt: string
+    }> = []
+    for (const filename of entries) {
+      if (filename.startsWith('.')) continue
+      const ext = extname(filename).toLowerCase()
+      const mime = EXT_TO_MIME[ext]
+      if (!mime) continue
+      try {
+        const fileStat = await stat(join(UPLOADS_DIR, filename))
+        if (!fileStat.isFile()) continue
+        items.push({
+          url: `/uploads/${filename}`,
+          filename,
+          mimeType: mime,
+          sizeBytes: fileStat.size,
+          modifiedAt: fileStat.mtime.toISOString(),
+        })
+      } catch {
+        /* skip unreadable */
+      }
+    }
+    items.sort((a, b) => b.modifiedAt.localeCompare(a.modifiedAt))
+    set.status = 200
+    return { data: items }
+  })
   .post(
     '/uploads',
     async ({ request, body, set }) => {
