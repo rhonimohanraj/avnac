@@ -11,11 +11,20 @@ const ALLOWED_EMAIL_DOMAINS = (env.ALLOWED_EMAIL_DOMAINS ?? '')
 
 const isHttps = env.BETTER_AUTH_URL.startsWith('https://')
 
+const TRUSTED_ORIGINS = env.CORS_ORIGIN
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean)
+
 export const auth = betterAuth({
   appName: 'Avnac',
   baseURL: env.BETTER_AUTH_URL,
   basePath: '/auth',
   secret: env.BETTER_AUTH_SECRET,
+  // BetterAuth rejects requests whose Origin header isn't in this list
+  // ("Invalid origin"). Frontend deployments live on a different subdomain
+  // than the API, so the API origin alone is not enough.
+  trustedOrigins: TRUSTED_ORIGINS,
   database: drizzleAdapter(db, {
     provider: 'pg',
   }),
