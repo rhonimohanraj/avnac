@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1778567497371,
+      "tag": "0000_rich_war_machine",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778596177365,
+      "tag": "0001_brand_kit_and_folders",
+      "breakpoints": true
+    }
+  ]
+}

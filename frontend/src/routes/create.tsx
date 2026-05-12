@@ -12,12 +12,15 @@ import {
   idbGetEditorRecord,
   idbMigrateLegacyDocument,
   idbSetDocumentName,
+  setCurrentDocumentFolderId,
 } from '../lib/avnac-editor-idb'
+import { hydrateDocumentFromServer } from '../lib/avnac-server-hydrate'
 
 type CreateSearch = {
   id?: string
   w?: number
   h?: number
+  folderId?: string
 }
 
 function parseSearchDimension(v: unknown): number | undefined {
@@ -26,13 +29,18 @@ function parseSearchDimension(v: unknown): number | undefined {
   return Math.min(16000, Math.max(100, Math.round(n)))
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export const Route = createFileRoute('/create')({
   validateSearch: (raw: Record<string, unknown>): CreateSearch => {
     const id = raw.id
+    const folderId = raw.folderId
     return {
       id: typeof id === 'string' && id.length > 0 ? id : undefined,
       w: parseSearchDimension(raw.w),
       h: parseSearchDimension(raw.h),
+      folderId:
+        typeof folderId === 'string' && UUID_RE.test(folderId) ? folderId : undefined,
     }
   },
   component: CreatePage,
@@ -50,6 +58,7 @@ function CreatePage() {
   const id = search.id
   const initialW = search.w
   const initialH = search.h
+  const folderIdParam = search.folderId
   const navigate = Route.useNavigate()
   const posthog = usePostHog()
   const editorUnsupported = useEditorUnsupportedOnThisDevice()
@@ -63,20 +72,35 @@ function CreatePage() {
         id: crypto.randomUUID(),
         w: initialW,
         h: initialH,
+        ...(folderIdParam ? { folderId: folderIdParam } : {}),
       },
       replace: true,
     })
-  }, [editorUnsupported, id, initialW, initialH, navigate])
+  }, [editorUnsupported, id, initialW, initialH, folderIdParam, navigate])
+
+  // Track the active folder so background server-syncs include it in the PUT body.
+  useEffect(() => {
+    setCurrentDocumentFolderId(folderIdParam ?? null)
+    return () => {
+      setCurrentDocumentFolderId(null)
+    }
+  }, [folderIdParam])
 
   useEffect(() => {
     if (!id) return
     let cancelled = false
     setDocumentStorageKind('loading')
-    void idbGetEditorRecord(id).then(row => {
+    void (async () => {
+      // 1. Try to pull from team-shared server first. If found, this hydrates IDB.
+      await hydrateDocumentFromServer(id)
+      if (cancelled) return
+      // 2. Then read local IDB (now containing either the freshly-hydrated server
+      //    copy or the user's existing local draft) for the editor to mount from.
+      const row = await idbGetEditorRecord(id)
       if (cancelled) return
       setDocumentTitle(row?.name?.trim() || 'Untitled')
       setDocumentStorageKind(row?.storageKind === 'legacy' ? 'legacy' : 'current')
-    })
+    })()
     return () => {
       cancelled = true
     }

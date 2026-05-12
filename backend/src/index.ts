@@ -8,10 +8,13 @@ import { env } from './config/env'
 import { sql } from './db'
 import { HttpError } from './lib/http'
 import { authPlugin } from './plugins/auth'
+import { brandKitsRoutes } from './routes/brand-kits'
 import { documentsRoutes } from './routes/documents'
+import { foldersRoutes } from './routes/folders'
 import { mediaRoutes } from './routes/media'
 import { sponsorRoutes } from './routes/sponsor'
 import { unsplashRoutes } from './routes/unsplash'
+import { uploadsRoutes } from './routes/uploads'
 
 function corsOrigins(value: string): string | string[] {
   const parts = value
@@ -75,6 +78,9 @@ const app = new Elysia({ adapter: node() })
     }
   })
   .use(documentsRoutes)
+  .use(foldersRoutes)
+  .use(brandKitsRoutes)
+  .use(uploadsRoutes)
   .use(mediaRoutes)
   .use(sponsorRoutes)
   .use(unsplashRoutes)

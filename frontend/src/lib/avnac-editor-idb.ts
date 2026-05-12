@@ -5,6 +5,10 @@ import {
   getAvnacDocumentStorageKind,
   parseAvnacDocument,
 } from './avnac-document'
+import {
+  deleteServerDocument,
+  saveServerDocument,
+} from './avnac-server-api'
 import type { VectorBoardDocument } from './avnac-vector-board-document'
 import {
   clearAvnacVectorBoardStorage,
@@ -13,6 +17,47 @@ import {
   saveVectorBoardDocs,
   saveVectorBoards,
 } from './avnac-vector-boards-storage'
+
+// Server sync context — set by /create route on mount so PUTs include the folder.
+let currentFolderId: string | null = null
+
+export function setCurrentDocumentFolderId(folderId: string | null) {
+  currentFolderId = folderId
+}
+
+function syncDocumentToServer(
+  id: string,
+  document: AvnacDocument,
+  name: string,
+): void {
+  // Fire-and-forget. Server is the team-shared source of truth, but a failed save
+  // (offline, unauthenticated, transient 5xx) must never block the local IDB write.
+  void (async () => {
+    try {
+      const boards = loadVectorBoards(id)
+      const boardDocs = loadVectorBoardDocs(id)
+      await saveServerDocument(id, {
+        document,
+        vectorBoards: boards,
+        vectorBoardDocs: boardDocs,
+        title: name,
+        folderId: currentFolderId,
+      })
+    } catch (err) {
+      console.warn('[avnac] server sync skipped:', err)
+    }
+  })()
+}
+
+function syncDeleteToServer(id: string): void {
+  void (async () => {
+    try {
+      await deleteServerDocument(id)
+    } catch (err) {
+      console.warn('[avnac] server delete skipped:', err)
+    }
+  })()
+}
 
 const DB_NAME = 'avnac-editor'
 const DB_VERSION = 1
@@ -146,11 +191,13 @@ export async function idbPutDocument(
         updatedAt: Date.now(),
         document,
         name,
+        storageKind: getAvnacDocumentStorageKind(document) === 'legacy' ? 'legacy' : 'current',
       } satisfies AvnacEditorIdbRecord)
     })
   } finally {
     db.close()
   }
+  syncDocumentToServer(id, document, name)
 }
 
 export async function idbSetDocumentName(id: string, name: string): Promise<void> {
@@ -172,6 +219,7 @@ export async function idbDeleteDocument(id: string): Promise<void> {
     db.close()
   }
   clearAvnacVectorBoardStorage(id)
+  syncDeleteToServer(id)
 }
 
 export async function idbDuplicateDocument(sourceId: string): Promise<string | null> {

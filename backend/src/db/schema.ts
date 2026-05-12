@@ -1,6 +1,8 @@
 import {
+  type AnyPgColumn,
   boolean,
   index,
+  integer,
   jsonb,
   pgTable,
   text,
@@ -88,6 +90,75 @@ export const verification = pgTable(
   ],
 )
 
+export const brandKit = pgTable('brand_kit', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  createdByUserId: text('created_by_user_id').references(() => user.id, {
+    onDelete: 'set null',
+  }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const brandKitColor = pgTable(
+  'brand_kit_color',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    brandKitId: uuid('brand_kit_id')
+      .notNull()
+      .references(() => brandKit.id, { onDelete: 'cascade' }),
+    name: text('name'),
+    hex: text('hex').notNull(),
+    position: integer('position').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  table => [index('brand_kit_color_kit_idx').on(table.brandKitId)],
+)
+
+export const brandKitAsset = pgTable(
+  'brand_kit_asset',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    brandKitId: uuid('brand_kit_id')
+      .notNull()
+      .references(() => brandKit.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    name: text('name'),
+    url: text('url').notNull(),
+    mimeType: text('mime_type').notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+    position: integer('position').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  table => [
+    index('brand_kit_asset_kit_idx').on(table.brandKitId),
+    index('brand_kit_asset_kind_idx').on(table.kind),
+  ],
+)
+
+export const folder = pgTable(
+  'folder',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    parentFolderId: uuid('parent_folder_id').references((): AnyPgColumn => folder.id, {
+      onDelete: 'cascade',
+    }),
+    brandKitId: uuid('brand_kit_id').references(() => brandKit.id, {
+      onDelete: 'set null',
+    }),
+    createdByUserId: text('created_by_user_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  table => [
+    index('folder_parent_idx').on(table.parentFolderId),
+    index('folder_brand_kit_idx').on(table.brandKitId),
+  ],
+)
+
 export const document = pgTable(
   'document',
   {
@@ -95,13 +166,23 @@ export const document = pgTable(
     ownerUserId: text('owner_user_id').references(() => user.id, {
       onDelete: 'set null',
     }),
+    folderId: uuid('folder_id').references(() => folder.id, {
+      onDelete: 'set null',
+    }),
+    lastEditedByUserId: text('last_edited_by_user_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    title: text('title'),
     document: jsonb('document').notNull(),
     vectorBoards: jsonb('vector_boards').notNull(),
     vectorBoardDocs: jsonb('vector_board_docs').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  table => [index('document_owner_user_id_idx').on(table.ownerUserId)],
+  table => [
+    index('document_owner_user_id_idx').on(table.ownerUserId),
+    index('document_folder_id_idx').on(table.folderId),
+  ],
 )
 
 export const schema = {
@@ -109,6 +190,10 @@ export const schema = {
   session,
   account,
   verification,
+  brandKit,
+  brandKitColor,
+  brandKitAsset,
+  folder,
   document,
 }
 
