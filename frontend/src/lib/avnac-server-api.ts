@@ -192,10 +192,9 @@ export async function signOut(): Promise<void> {
 }
 
 export async function requestPasswordReset(email: string, redirectTo: string): Promise<void> {
-  // BetterAuth: POST /auth/forget-password with email + redirectTo. The redirectTo
-  // is what we want the email link to point at (our /reset-password page on the
-  // frontend). BetterAuth signs a token tied to that URL.
-  const response = await fetch(api('/auth/forget-password'), {
+  // BetterAuth 1.6.5: POST /auth/request-password-reset with email + redirectTo.
+  // (The older alias /auth/forget-password 404s in this version.)
+  const response = await fetch(api('/auth/request-password-reset'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
