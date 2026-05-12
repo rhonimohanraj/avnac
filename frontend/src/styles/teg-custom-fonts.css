@@ -1,0 +1,808 @@
+/* TEG custom fonts imported from Canva — auto-generated 2026-05-12 */
+
+/* Autumn in November (1 variants) */
+@font-face {
+  font-family: "Autumn in November";
+  src: url('/fonts/autumn-in-november-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Bohemian Soul (1 variants) */
+@font-face {
+  font-family: "Bohemian Soul";
+  src: url('/fonts/bohemian-soul-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Canter (6 variants) */
+@font-face {
+  font-family: "Canter";
+  src: url('/fonts/canter-700-normal-bold-3d.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Canter";
+  src: url('/fonts/canter-300-normal-outline.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Canter";
+  src: url('/fonts/canter-300-normal-light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Canter";
+  src: url('/fonts/canter-700-normal-bold-strips.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Canter";
+  src: url('/fonts/canter-700-normal-bold-shadow.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Canter";
+  src: url('/fonts/canter-700-normal-bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ChellaType (1 variants) */
+@font-face {
+  font-family: "ChellaType";
+  src: url('/fonts/chellatype-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Dublin (10 variants) */
+@font-face {
+  font-family: "Dublin";
+  src: url('/fonts/dublin-900-normal-heavy.woff') format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dublin";
+  src: url('/fonts/dublin-700-italic-bold-italic.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dublin";
+  src: url('/fonts/dublin-100-normal-thin.woff') format('woff');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dublin";
+  src: url('/fonts/dublin-700-normal-bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dublin";
+  src: url('/fonts/dublin-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dublin";
+  src: url('/fonts/dublin-900-italic-heavy-italic.woff') format('woff');
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dublin";
+  src: url('/fonts/dublin-100-italic-thin-italic.woff') format('woff');
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dublin";
+  src: url('/fonts/dublin-400-italic-italic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dublin";
+  src: url('/fonts/dublin-300-italic-light-italic.woff') format('woff');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Dublin";
+  src: url('/fonts/dublin-300-normal-light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Fino Sans (10 variants) */
+@font-face {
+  font-family: "Fino Sans";
+  src: url('/fonts/fino-sans-700-italic-bold-italic.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans";
+  src: url('/fonts/fino-sans-100-normal-thin.woff') format('woff');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans";
+  src: url('/fonts/fino-sans-300-normal-light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans";
+  src: url('/fonts/fino-sans-500-normal-medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans";
+  src: url('/fonts/fino-sans-500-italic-medium-italic.woff') format('woff');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans";
+  src: url('/fonts/fino-sans-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans";
+  src: url('/fonts/fino-sans-300-italic-light-italic.woff') format('woff');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans";
+  src: url('/fonts/fino-sans-400-italic-italic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans";
+  src: url('/fonts/fino-sans-700-normal-bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans";
+  src: url('/fonts/fino-sans-100-italic-thin-italic.woff') format('woff');
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Fino Sans Title (10 variants) */
+@font-face {
+  font-family: "Fino Sans Title";
+  src: url('/fonts/fino-sans-title-100-normal-thin.woff') format('woff');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans Title";
+  src: url('/fonts/fino-sans-title-700-normal-bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans Title";
+  src: url('/fonts/fino-sans-title-300-italic-light-italic.woff') format('woff');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans Title";
+  src: url('/fonts/fino-sans-title-500-normal-medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans Title";
+  src: url('/fonts/fino-sans-title-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans Title";
+  src: url('/fonts/fino-sans-title-100-italic-thin-italic.woff') format('woff');
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans Title";
+  src: url('/fonts/fino-sans-title-300-normal-light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans Title";
+  src: url('/fonts/fino-sans-title-500-italic-medium-italic.woff') format('woff');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans Title";
+  src: url('/fonts/fino-sans-title-700-italic-bold-italic.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fino Sans Title";
+  src: url('/fonts/fino-sans-title-400-italic-italic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Frunch (2 variants) */
+@font-face {
+  font-family: "Frunch";
+  src: url('/fonts/frunch-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Frunch";
+  src: url('/fonts/frunch-400-normal-regular-1.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* GG (1 variants) */
+@font-face {
+  font-family: "GG";
+  src: url('/fonts/gg-500-normal-medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Giveny (4 variants) */
+@font-face {
+  font-family: "Giveny";
+  src: url('/fonts/giveny-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Giveny";
+  src: url('/fonts/giveny-400-italic-italic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Giveny";
+  src: url('/fonts/giveny-400-italic-italic-1.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Giveny";
+  src: url('/fonts/giveny-400-normal-regular-1.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Greycliff CF (14 variants) */
+@font-face {
+  font-family: "Greycliff CF";
+  src: url('/fonts/greycliff-cf-900-normal-heavy.woff') format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Greycliff CF";
+  src: url('/fonts/greycliff-cf-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Greycliff CF";
+  src: url('/fonts/greycliff-cf-400-italic-regular-oblique.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Greycliff CF";
+  src: url('/fonts/greycliff-cf-800-normal-extra-bold.woff') format('woff');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Greycliff CF";
+  src: url('/fonts/greycliff-cf-300-italic-light-oblique.woff') format('woff');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Greycliff CF";
+  src: url('/fonts/greycliff-cf-500-italic-medium-oblique.woff') format('woff');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Greycliff CF";
+  src: url('/fonts/greycliff-cf-600-italic-demi-bold-oblique.woff') format('woff');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Greycliff CF";
+  src: url('/fonts/greycliff-cf-300-normal-light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Greycliff CF";
+  src: url('/fonts/greycliff-cf-600-normal-demi-bold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Greycliff CF";
+  src: url('/fonts/greycliff-cf-900-italic-heavy-oblique.woff') format('woff');
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Greycliff CF";
+  src: url('/fonts/greycliff-cf-500-normal-medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Greycliff CF";
+  src: url('/fonts/greycliff-cf-700-normal-bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Greycliff CF";
+  src: url('/fonts/greycliff-cf-800-italic-extra-bold-oblique.woff') format('woff');
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Greycliff CF";
+  src: url('/fonts/greycliff-cf-700-italic-bold-oblique.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Helvetica Neue (12 variants) */
+@font-face {
+  font-family: "Helvetica Neue";
+  src: url('/fonts/helvetica-neue-500-italic-medium-italic.woff') format('woff');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue";
+  src: url('/fonts/helvetica-neue-300-normal-light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue";
+  src: url('/fonts/helvetica-neue-100-italic-ultra-light-italic.woff') format('woff');
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue";
+  src: url('/fonts/helvetica-neue-700-normal-bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue";
+  src: url('/fonts/helvetica-neue-700-italic-bold-italic.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue";
+  src: url('/fonts/helvetica-neue-100-normal-ultra-light.woff') format('woff');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue";
+  src: url('/fonts/helvetica-neue-400-italic-italic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue";
+  src: url('/fonts/helvetica-neue-200-normal-thin.woff') format('woff');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue";
+  src: url('/fonts/helvetica-neue-300-italic-light-italic.woff') format('woff');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue";
+  src: url('/fonts/helvetica-neue-500-normal-medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue";
+  src: url('/fonts/helvetica-neue-200-italic-thin-italic.woff') format('woff');
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Helvetica Neue";
+  src: url('/fonts/helvetica-neue-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Herr Von Muellerhoff (1 variants) */
+@font-face {
+  font-family: "Herr Von Muellerhoff";
+  src: url('/fonts/herr-von-muellerhoff-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Hyogo (2 variants) */
+@font-face {
+  font-family: "Hyogo";
+  src: url('/fonts/hyogo-900-normal-black.woff') format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Hyogo";
+  src: url('/fonts/hyogo-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Jaquel (3 variants) */
+@font-face {
+  font-family: "Jaquel";
+  src: url('/fonts/jaquel-700-italic-bold-italic.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Jaquel";
+  src: url('/fonts/jaquel-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Jaquel";
+  src: url('/fonts/jaquel-700-normal-bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Omnes Pro (1 variants) */
+@font-face {
+  font-family: "Omnes Pro";
+  src: url('/fonts/omnes-pro-700-normal-bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Pink Sunset (5 variants) */
+@font-face {
+  font-family: "Pink Sunset";
+  src: url('/fonts/pink-sunset-400-italic-italic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pink Sunset";
+  src: url('/fonts/pink-sunset-400-italic-italic-1.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pink Sunset";
+  src: url('/fonts/pink-sunset-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pink Sunset";
+  src: url('/fonts/pink-sunset-400-italic-italic-2.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pink Sunset";
+  src: url('/fonts/pink-sunset-400-normal-regular-1.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Risk Atoms (2 variants) */
+@font-face {
+  font-family: "Risk Atoms";
+  src: url('/fonts/risk-atoms-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Risk Atoms";
+  src: url('/fonts/risk-atoms-400-normal-regular-1.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* SUBSCRIBER (1 variants) */
+@font-face {
+  font-family: "SUBSCRIBER";
+  src: url('/fonts/subscriber-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Saxvon (2 variants) */
+@font-face {
+  font-family: "Saxvon";
+  src: url('/fonts/saxvon-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Saxvon";
+  src: url('/fonts/saxvon-400-normal-regular-1.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Torres (6 variants) */
+@font-face {
+  font-family: "Torres";
+  src: url('/fonts/torres-400-normal-slab.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Torres";
+  src: url('/fonts/torres-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Torres";
+  src: url('/fonts/torres-400-normal-regular-1.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Torres";
+  src: url('/fonts/torres-400-normal-bold.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Torres";
+  src: url('/fonts/torres-400-normal-bold-1.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Torres";
+  src: url('/fonts/torres-400-normal-slab-1.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Vintage Signature (2 variants) */
+@font-face {
+  font-family: "Vintage Signature";
+  src: url('/fonts/vintage-signature-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Vintage Signature";
+  src: url('/fonts/vintage-signature-400-normal-regular-1.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Wensley (3 variants) */
+@font-face {
+  font-family: "Wensley";
+  src: url('/fonts/wensley-300-normal-light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Wensley";
+  src: url('/fonts/wensley-700-normal-bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Wensley";
+  src: url('/fonts/wensley-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Zisel (6 variants) */
+@font-face {
+  font-family: "Zisel";
+  src: url('/fonts/zisel-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Zisel";
+  src: url('/fonts/zisel-450-normal-outline.woff') format('woff');
+  font-weight: 450;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Zisel";
+  src: url('/fonts/zisel-100-normal-thin.woff') format('woff');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Zisel";
+  src: url('/fonts/zisel-400-normal-blur.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Zisel";
+  src: url('/fonts/zisel-900-normal-black.woff') format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Zisel";
+  src: url('/fonts/zisel-300-normal-light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* modernline - Personal Use (2 variants) */
+@font-face {
+  font-family: "modernline - Personal Use";
+  src: url('/fonts/modernline-personal-use-400-normal-regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "modernline - Personal Use";
+  src: url('/fonts/modernline-personal-use-400-normal-regular-1.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+

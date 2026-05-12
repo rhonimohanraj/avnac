@@ -1,3 +1,5 @@
+import { CUSTOM_FONT_FAMILIES } from '../data/google-font-families'
+
 const loaded = new Set<string>()
 const fontReadyPromises = new Map<string, Promise<void>>()
 
@@ -30,6 +32,11 @@ export function loadGoogleFontFamily(family: string): void {
   const key = normalizeFontFamilyKey(family)
   if (!key) return
   if (loaded.has(key)) return
+  // Custom fonts are bundled via @font-face in styles/teg-custom-fonts.css — never hit GFonts CDN.
+  if (CUSTOM_FONT_FAMILIES.has(key)) {
+    loaded.add(key)
+    return
+  }
 
   const id = linkId(key)
   if (document.getElementById(id)) {
